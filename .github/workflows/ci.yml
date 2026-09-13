@@ -30,6 +30,33 @@ jobs:
       - name: Run Lint
         run: npm run lint
 
+  testes-automatizados:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Run Vitest Coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: coverage/
+          retention-days: 7
+
   build:
     runs-on: ubuntu-latest
 
@@ -48,5 +75,3 @@ jobs:
 
       - name: Build app
         run: npm run build
-
-  # testes-automatizados:
