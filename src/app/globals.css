@@ -12,15 +12,120 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.signup-page {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 32px 20px;
+}
+
+.signup-card {
+  margin-top: -8vh;
+  width: min(100%, 520px);
+}
+
+.signup-card h1 {
+  color: #080808;
+  font-size: clamp(1.75rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 72px;
+  text-align: center;
+}
+
+.signup-form {
+  margin: 0 auto;
+  width: min(100%, 340px);
+}
+
+.form-field {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.form-field label {
+  color: #111111;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.form-field input {
+  border: 1px solid #999999;
+  border-radius: 0;
+  box-sizing: border-box;
+  color: #111111;
+  font: inherit;
+  height: 28px;
+  min-width: 0;
+  padding: 3px 6px;
+}
+
+.form-field input:focus {
+  border-color: #333333;
+  outline: 2px solid #d4d4d4;
+  outline-offset: 1px;
+}
+
+.form-field input::placeholder {
+  color: #8a8a8a;
+  opacity: 1;
+}
+
+.signup-form button {
+  background: #333333;
+  border: 0;
+  border-radius: 0;
+  color: #ffffff;
+  cursor: pointer;
+  display: block;
+  font: 700 0.9rem Arial, Helvetica, sans-serif;
+  height: 27px;
+  margin-top: 10px;
+  padding: 0;
+  transition: background-color 120ms ease;
+  width: 100%;
+}
+
+.signup-form button:hover {
+  background: #1f1f1f;
+}
+
+.signup-form button:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
+.form-message {
+  color: #a31818;
+  font-size: 0.875rem;
+  margin: 12px 0 0;
+  text-align: center;
+}
+
+.form-message.success {
+  color: #176b32;
+}
+
+@media (max-width: 480px) {
+  .signup-card {
+    margin-top: -4vh;
+  }
+
+  .signup-card h1 {
+    margin-bottom: 48px;
+  }
+
+  .form-field {
+    grid-template-columns: 54px 1fr;
+  }
 }
