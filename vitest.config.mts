@@ -1,7 +1,7 @@
 // vitest.config.mts
-import { defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import path from 'path';
+import { defineConfig } from 'vitest/config'
+import tsconfigPaths from 'vite-tsconfig-paths'
+import path from 'path'
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
@@ -20,4 +20,4 @@ export default defineConfig({
       include: ['src/app/api/**/*.ts'],
     },
   },
-});
+})
