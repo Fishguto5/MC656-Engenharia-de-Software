@@ -1,3 +1,6 @@
+type Estado = string
+type Local = "Brasil" | Estado
+
 export type Candidato = {
   id: string
   nome: string
@@ -26,4 +29,16 @@ export function getCandidatosSegundoTurno(votacao: VotacaoPresidente): [Candidat
 
   const ordenados = [...votacao.candidatos].sort((a, b) => b.votos - a.votos)
   return [ordenados[0], ordenados[1]]
+}
+
+export type ConsultaPublica = {
+  id: string
+  local: Local
+  data: Date
+  sim: number
+  nao: number
+}
+
+export function resultadoConsultaPublica(c: ConsultaPublica): boolean {
+  return c.sim >= c.nao
 }
