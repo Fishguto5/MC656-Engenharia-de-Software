@@ -125,7 +125,7 @@ describe("resultadoConsultaPublica", () => {
     [[-50, -51]],
     [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]]
   ])("consulta aprovada: %s", ([sim, nao]) => {
-    let c: ConsultaPublica = {id: "", local: "", data: new Date(), sim, nao}
+    const c: ConsultaPublica = {id: "", local: "", data: new Date(), sim, nao}
     expect(resultadoConsultaPublica(c)).toBe(true)
   })
 
@@ -136,7 +136,7 @@ describe("resultadoConsultaPublica", () => {
     [[-50, -51]],
     [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]]
   ])("consulta rejeitada: %s", ([nao, sim]) => {
-    let c: ConsultaPublica = {id: "", local: "", data: new Date(), sim, nao}
+    const c: ConsultaPublica = {id: "", local: "", data: new Date(), sim, nao}
     expect(resultadoConsultaPublica(c)).toBe(false)
   })
 })
