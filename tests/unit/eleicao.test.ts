@@ -16,7 +16,6 @@ describe('precisaSegundoTurno', () => {
       candidatos: [],
       votosBrancos: 0,
       votosNulos: 0,
-      totalVotos: 0,
     }
   })
 
@@ -32,7 +31,6 @@ describe('precisaSegundoTurno', () => {
       partido: '',
       votos: 30,
     }]
-    votacao.totalVotos = 30
 
     const res = precisaSegundoTurno(votacao)
     expect(res).toBe(false)
@@ -44,7 +42,6 @@ describe('precisaSegundoTurno', () => {
       { id: '', nome: '', partido: '', votos: 19 },
       { id: '', nome: '', partido: '', votos: 51 },
     ]
-    votacao.totalVotos = 100
 
     const res = precisaSegundoTurno(votacao)
     expect(res).toBe(false)
@@ -56,7 +53,6 @@ describe('precisaSegundoTurno', () => {
       { id: '', nome: '', partido: '', votos: 20 },
       { id: '', nome: '', partido: '', votos: 50 },
     ]
-    votacao.totalVotos = 100
 
     const res = precisaSegundoTurno(votacao)
     expect(res).toBe(true)
@@ -73,7 +69,6 @@ describe('getCandidatosSegundoTurno', () => {
       candidatos: [],
       votosBrancos: 0,
       votosNulos: 0,
-      totalVotos: 0,
     }
   })
 
@@ -89,7 +84,6 @@ describe('getCandidatosSegundoTurno', () => {
       partido: '',
       votos: 30,
     }]
-    votacao.totalVotos = 30
 
     const res = getCandidatosSegundoTurno(votacao)
     expect(res).toBe(null)
@@ -101,7 +95,6 @@ describe('getCandidatosSegundoTurno', () => {
       { id: '', nome: '', partido: '', votos: 19 },
       { id: '', nome: '', partido: '', votos: 51 },
     ]
-    votacao.totalVotos = 100
 
     const res = getCandidatosSegundoTurno(votacao)
     expect(res).toBe(null)
@@ -113,7 +106,6 @@ describe('getCandidatosSegundoTurno', () => {
     const c3: Candidato = { id: '03', nome: '', partido: '', votos: 50 }
 
     votacao.candidatos = [c1, c2, c3]
-    votacao.totalVotos = 100
 
     const res = getCandidatosSegundoTurno(votacao)
     const ans = [c3, c1]

@@ -11,7 +11,6 @@ export type VotacaoPresidente = {
   candidatos: Candidato[]
   votosBrancos: number
   votosNulos: number
-  totalVotos: number
 }
 
 export function precisaSegundoTurno(votacao: VotacaoPresidente): boolean {
