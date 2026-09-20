@@ -3,6 +3,9 @@ import {
   getCandidatosSegundoTurno,
   precisaSegundoTurno,
   VotacaoPresidente,
+
+  type ConsultaPublica,
+  resultadoConsultaPublica
 } from '@/lib/eleicao'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -111,5 +114,29 @@ describe('getCandidatosSegundoTurno', () => {
     const ans = [c3, c1]
 
     expect(res).toEqual(ans)
+  })
+})
+
+describe("resultadoConsultaPublica", () => {
+  it.each([
+    [[100, 50]],
+    [[5, 4]],
+    [[90, -1]],
+    [[-50, -51]],
+    [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]]
+  ])("consulta aprovada: %s", ([sim, nao]) => {
+    let c: ConsultaPublica = {id: "", local: "", data: new Date(), sim, nao}
+    expect(resultadoConsultaPublica(c)).toBe(true)
+  })
+
+  it.each([
+    [[100, 50]],
+    [[5, 4]],
+    [[90, -1]],
+    [[-50, -51]],
+    [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]]
+  ])("consulta rejeitada: %s", ([nao, sim]) => {
+    let c: ConsultaPublica = {id: "", local: "", data: new Date(), sim, nao}
+    expect(resultadoConsultaPublica(c)).toBe(false)
   })
 })
