@@ -1,11 +1,11 @@
 import {
-  Candidato,
-  getCandidatosSegundoTurno,
-  precisaSegundoTurno,
-  VotacaoPresidente,
-
+  type Candidato,
+  type VotacaoPresidente,
   type ConsultaPublica,
+  precisaSegundoTurno,
   resultadoConsultaPublica,
+  getCandidatosSegundoTurno,
+  getResultadoPrimeiroTurno,
 } from '@/lib/eleicao'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -138,5 +138,100 @@ describe('resultadoConsultaPublica', () => {
   ])('consulta rejeitada: %s', ([nao, sim]) => {
     const c: ConsultaPublica = { id: '', local: '', data: new Date(), sim, nao }
     expect(resultadoConsultaPublica(c)).toBe(false)
+  })
+})
+
+describe('getResultadoPrimeiroTurno', () => {
+  const candidatoA: Candidato = { id: '1', nome: 'A', partido: 'A', votos: 0 }
+  const candidatoB: Candidato = { id: '2', nome: 'B', partido: 'B', votos: 0 }
+  const candidatoC: Candidato = { id: '3', nome: 'C', partido: 'C', votos: 0 }
+
+  const votacaoBase: Omit<VotacaoPresidente, 'candidatos'> = {
+    id: 'votacao-2026',
+    data: new Date('2026-10-04'),
+    votosBrancos: 0,
+    votosNulos: 0,
+  }
+
+  it('deve retornar apenas o candidato vencedor se ele tiver mais de 50% dos votos válidos', () => {
+    const candA = { ...candidatoA, votos: 60 }
+    const candB = { ...candidatoB, votos: 30 }
+    const candC = { ...candidatoC, votos: 10 }
+
+    const votacao: VotacaoPresidente = {
+      ...votacaoBase,
+      candidatos: [candA, candB, candC],
+    }
+
+    const resultado = getResultadoPrimeiroTurno(votacao)
+
+    expect(Array.isArray(resultado)).toBe(false)
+    expect(resultado).toEqual(candA)
+  })
+
+  it('deve retornar os dois candidatos mais votados em caso de 2º turno (menos de 50% dos votos válidos)', () => {
+    const candA = { ...candidatoA, votos: 40 }
+    const candB = { ...candidatoB, votos: 35 }
+    const candC = { ...candidatoC, votos: 25 }
+
+    const votacao: VotacaoPresidente = {
+      ...votacaoBase,
+      candidatos: [candA, candB, candC],
+    }
+
+    const resultado = getResultadoPrimeiroTurno(votacao)
+
+    expect(Array.isArray(resultado)).toBe(true)
+    expect(resultado).toEqual([candA, candB])
+  })
+
+  it('deve ir para o 2º turno se o candidato mais votado tiver exatamente 50% dos votos válidos', () => {
+    const candA = { ...candidatoA, votos: 50 }
+    const candB = { ...candidatoB, votos: 30 }
+    const candC = { ...candidatoC, votos: 20 }
+
+    const votacao: VotacaoPresidente = {
+      ...votacaoBase,
+      candidatos: [candA, candB, candC],
+    }
+
+    const resultado = getResultadoPrimeiroTurno(votacao)
+
+    expect(Array.isArray(resultado)).toBe(true)
+    expect(resultado).toEqual([candA, candB])
+  })
+
+  it('deve desconsiderar votos brancos e nulos no cálculo da porcentagem dos votos válidos', () => {
+    const candA = { ...candidatoA, votos: 51 }
+    const candB = { ...candidatoB, votos: 49 }
+
+    const votacao: VotacaoPresidente = {
+      ...votacaoBase,
+      votosBrancos: 500, // não deve afetar o cálculo
+      votosNulos: 1000,
+      candidatos: [candA, candB],
+    }
+
+    const resultado = getResultadoPrimeiroTurno(votacao)
+
+    expect(resultado).toEqual(candA)
+  })
+
+  it('deve ordenar os candidatos por votos antes de definir o resultado, independente da ordem da lista enviada', () => {
+    const candA = { ...candidatoA, votos: 20 }
+    const candB = { ...candidatoB, votos: 45 }
+    const candC = { ...candidatoC, votos: 35 }
+
+    const votacao: VotacaoPresidente = {
+      ...votacaoBase,
+      // Enviando fora da ordem decrescente de votos
+      candidatos: [candA, candB, candC],
+    }
+
+    const resultado = getResultadoPrimeiroTurno(votacao)
+
+    // Mais votado é B (45%), seguido de C (35%). Deve ir para o 2º turno com [B, C]
+    expect(Array.isArray(resultado)).toBe(true)
+    expect(resultado).toEqual([candB, candC])
   })
 })
