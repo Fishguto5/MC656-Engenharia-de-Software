@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
+// Esse teste tem como objetivo ver se o Firebase foi inicializado como esperado
+// Puxa as variáveis de ambiente, que devem estar dentro de um arquivo .env de cada máquina
+// Importa o objeto do firebase.ts
 const initializeApp = vi.fn(() => ({ name: "test-app" }));
 const getAnalytics = vi.fn(() => ({ name: "test-analytics" }));
 
