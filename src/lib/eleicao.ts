@@ -16,6 +16,8 @@ export type VotacaoPresidente = {
   votosNulos: number
 }
 
+export type ResultadoPrimeiroTurno = [Candidato, Candidato] | Candidato
+
 export function precisaSegundoTurno(votacao: VotacaoPresidente): boolean {
   const votosValidos = votacao.candidatos.reduce((acc, c) => acc + c.votos, 0)
   if (votosValidos == 0) return false
@@ -41,4 +43,11 @@ export type ConsultaPublica = {
 
 export function resultadoConsultaPublica(c: ConsultaPublica): boolean {
   return c.sim >= c.nao
+}
+
+export function getResultadoPrimeiroTurno(votacao: VotacaoPresidente): ResultadoPrimeiroTurno {
+  const sturno = getCandidatosSegundoTurno(votacao)
+  if (sturno !== null) return sturno
+
+  return [...votacao.candidatos].sort((a, b) => b.votos - a.votos)[0]
 }
