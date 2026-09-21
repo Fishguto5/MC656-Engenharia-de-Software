@@ -1,5 +1,5 @@
 type Estado = string
-type Local = "Brasil" | Estado
+type Local = 'Brasil' | Estado
 
 export type Candidato = {
   id: string

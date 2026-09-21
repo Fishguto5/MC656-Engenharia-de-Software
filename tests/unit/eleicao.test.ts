@@ -5,7 +5,7 @@ import {
   VotacaoPresidente,
 
   type ConsultaPublica,
-  resultadoConsultaPublica
+  resultadoConsultaPublica,
 } from '@/lib/eleicao'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -117,15 +117,15 @@ describe('getCandidatosSegundoTurno', () => {
   })
 })
 
-describe("resultadoConsultaPublica", () => {
+describe('resultadoConsultaPublica', () => {
   it.each([
     [[100, 50]],
     [[5, 4]],
     [[90, -1]],
     [[-50, -51]],
-    [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]]
-  ])("consulta aprovada: %s", ([sim, nao]) => {
-    const c: ConsultaPublica = {id: "", local: "", data: new Date(), sim, nao}
+    [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]],
+  ])('consulta aprovada: %s', ([sim, nao]) => {
+    const c: ConsultaPublica = { id: '', local: '', data: new Date(), sim, nao }
     expect(resultadoConsultaPublica(c)).toBe(true)
   })
 
@@ -134,9 +134,9 @@ describe("resultadoConsultaPublica", () => {
     [[5, 4]],
     [[90, -1]],
     [[-50, -51]],
-    [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]]
-  ])("consulta rejeitada: %s", ([nao, sim]) => {
-    const c: ConsultaPublica = {id: "", local: "", data: new Date(), sim, nao}
+    [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]],
+  ])('consulta rejeitada: %s', ([nao, sim]) => {
+    const c: ConsultaPublica = { id: '', local: '', data: new Date(), sim, nao }
     expect(resultadoConsultaPublica(c)).toBe(false)
   })
 })
