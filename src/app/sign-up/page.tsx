@@ -7,7 +7,7 @@ function onlyDigits(value: string) {
 }
 
 export function isValidCpf(value: string) {
-  const cpf = onlyDigits(value);
+  const cpf = onlyDigits(value)
 
   if (cpf.length !== 11 || /^([0-9])\1+$/.test(cpf)) {
     return false
@@ -31,7 +31,7 @@ export function isValidCpf(value: string) {
 }
 
 export function formatCpf(value: string) {
-  const cpf = onlyDigits(value).slice(0, 11);
+  const cpf = onlyDigits(value).slice(0, 11)
 
   return cpf
     .replace(/(\d{3})(\d)/, '$1.$2')
