@@ -1,9 +1,46 @@
-import {
-  Candidato,
-  ordenarPorVotacao,
-  somarVotos,
-  validarVotos,
-} from './eleicao'
+export type Candidato = {
+  id: string
+  nome: string
+  partido: string
+  votos: number
+  // Usada apenas nos critérios de desempate por idade ("mais idoso").
+  dataNascimento?: Date
+  // Federação partidária do candidato. Nas eleições proporcionais a federação
+  // atua como um único partido (Lei 9.504/97, art. 6º-A).
+  federacao?: string
+}
+
+// Soma dos votos nominais. Votos em branco e nulos não são computados
+// (CF, art. 77, § 2º; Lei 9.504/97, art. 2º).
+export function somarVotos(candidatos: Candidato[]): number {
+  return candidatos.reduce((acc, c) => acc + c.votos, 0)
+}
+
+// Lança RangeError se algum valor não for um inteiro maior ou igual a zero.
+export function validarVotos(valores: number[]): void {
+  for (const valor of valores) {
+    if (!Number.isInteger(valor) || valor < 0) {
+      throw new RangeError(`Quantidade de votos inválida: ${valor}`)
+    }
+  }
+}
+
+// Maior votação primeiro. Em caso de empate, prevalece o candidato mais idoso
+// (CF, art. 77, § 5º; Lei 9.504/97, art. 2º, § 3º; Código Eleitoral, art. 110).
+// Sem data de nascimento informada, a ordem original é mantida (sort estável).
+export function compararPorVotacao(a: Candidato, b: Candidato): number {
+  if (a.votos !== b.votos) return b.votos - a.votos
+
+  if (a.dataNascimento && b.dataNascimento) {
+    return a.dataNascimento.getTime() - b.dataNascimento.getTime()
+  }
+
+  return 0
+}
+
+export function ordenarPorVotacao(candidatos: Candidato[]): Candidato[] {
+  return [...candidatos].sort(compararPorVotacao)
+}
 
 // Percentuais do quociente eleitoral (QE) exigidos pelo Código Eleitoral.
 // Art. 108: votação nominal mínima do candidato para ser eleito pelo quociente.

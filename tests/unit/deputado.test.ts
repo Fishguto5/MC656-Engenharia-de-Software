@@ -1,5 +1,5 @@
-import { Candidato } from '@/lib/eleicao'
 import {
+  type Candidato,
   apurarDeputados,
   calcularQuocienteEleitoral,
   calcularQuocientePartidario,
