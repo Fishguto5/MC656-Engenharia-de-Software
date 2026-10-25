@@ -1,4 +1,5 @@
 import type { Timestamp } from 'firebase/firestore'
+import { ElectionStatus } from './Election'
 
 export interface FirebaseElectionData {
   title?: unknown
@@ -8,4 +9,14 @@ export interface FirebaseElectionData {
   status?: unknown
   created_at?: Timestamp | Date | string | number | null
   updated_at?: Timestamp | Date | string | number | null
+}
+
+export interface FirebaseElectionDocument {
+  title: string
+  description: string
+  starts_at: Timestamp
+  ends_at: Timestamp
+  status: ElectionStatus
+  created_at: Timestamp
+  updated_at: Timestamp
 }

@@ -1,6 +1,6 @@
 import { DocumentData, Timestamp } from 'firebase/firestore'
 import { ElectionStatus, Election } from './Election'
-import { FirebaseElectionData } from './FirebaseElectionData'
+import { FirebaseElectionData, FirebaseElectionDocument } from './FirebaseElectionData'
 
 // Help Functions
 function requireNonEmptyString(value: unknown, fieldName: string, id: string): string {
@@ -78,5 +78,17 @@ export function fromFirebase(
     status: parseStatus(data.status, id),
     createdAt: requireDate(data.created_at, 'created_at', id),
     updatedAt: requireDate(data.updated_at ?? data.created_at, 'updated_at', id),
+  }
+}
+
+export function toFirebase(election: Election): FirebaseElectionDocument {
+  return {
+    title: election.title,
+    description: election.description,
+    starts_at: Timestamp.fromDate(election.startsAt),
+    ends_at: Timestamp.fromDate(election.endsAt),
+    status: election.status,
+    created_at: Timestamp.fromDate(election.createdAt),
+    updated_at: Timestamp.fromDate(election.updatedAt),
   }
 }

@@ -3,28 +3,44 @@ import {
   collection,
   deleteDoc,
   doc,
+  DocumentData,
   getDoc,
   getDocs,
   orderBy,
   query,
-  Timestamp,
   updateDoc,
 } from 'firebase/firestore'
 
-import { firestore } from '@/config/firebase'
-import type { Election } from '@/domain/election/Election'
-import type {
-  CreateElectionInput,
-  ElectionRepository,
-  UpdateElectionInput,
-} from '@/repositories/ElectionRepository'
+import { Election, ElectionStatus } from './Election'
 
-import { FirebaseElectionAdapter } from '../adapters/FirebaseElectionAdapter'
+import { firestore } from './firebase'
+import { fromFirebase, toFirebase } from './FirebaseElectionAdapter'
 
+// Types
+export interface CreateElectionInput {
+  title: string
+  description?: string
+  startsAt: Date
+  endsAt: Date
+  status?: ElectionStatus
+}
+
+export interface UpdateElectionInput {
+  title?: string
+  description?: string
+  startsAt?: Date
+  endsAt?: Date
+  status?: ElectionStatus
+}
+
+// Constantes
 const ELECTIONS_COLLECTION = 'elections'
 
-export class FirebaseElectionRepository
-implements ElectionRepository {
+// ==========================================
+// Repository Implementation
+// ==========================================
+
+export class FirebaseElectionRepository {
   async findAll(): Promise<Election[]> {
     const electionsQuery = query(
       collection(firestore, ELECTIONS_COLLECTION),
@@ -33,35 +49,29 @@ implements ElectionRepository {
 
     const snapshot = await getDocs(electionsQuery)
 
-    return snapshot.docs.map(document =>
-      FirebaseElectionAdapter.fromSnapshot(document),
+    return snapshot.docs.map((document) =>
+      fromFirebase(document.id, document.data()),
     )
   }
 
   async findById(id: string): Promise<Election | null> {
-    const electionReference = doc(
-      firestore,
-      ELECTIONS_COLLECTION,
-      id,
-    )
-
+    const electionReference = doc(firestore, ELECTIONS_COLLECTION, id)
     const snapshot = await getDoc(electionReference)
 
     if (!snapshot.exists()) {
       return null
     }
 
-    return FirebaseElectionAdapter.fromSnapshot(snapshot)
+    return fromFirebase(snapshot.id, snapshot.data())
   }
 
-  async create(
-    input: CreateElectionInput,
-  ): Promise<Election> {
+  async create(input: CreateElectionInput): Promise<Election> {
     const now = new Date()
 
-    const electionToCreate: Omit<Election, 'id'> = {
+    const electionToCreate: Election = {
+      id: '',
       title: input.title,
-      description: input.description,
+      description: input.description ?? '',
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       status: input.status ?? 'draft',
@@ -69,41 +79,35 @@ implements ElectionRepository {
       updatedAt: now,
     }
 
-    const firebaseData =
-      FirebaseElectionAdapter.toFirebase(electionToCreate)
+    const firebaseData = toFirebase(electionToCreate)
 
     const documentReference = await addDoc(
       collection(firestore, ELECTIONS_COLLECTION),
-      firebaseData,
+      firebaseData as DocumentData, // <-- 2. Cast here for addDoc
     )
 
-    const createdElection = await this.findById(
-      documentReference.id,
-    )
+    const createdElection = await this.findById(documentReference.id)
 
     if (!createdElection) {
       throw new Error(
-        `Election "${documentReference.id}" was created but could not be read`,
+        `Election "${documentReference.id}" was created but could not be read.`,
       )
     }
 
     return createdElection
   }
 
-  async update(
-    id: string,
-    input: UpdateElectionInput,
-  ): Promise<Election> {
+  async update(id: string, input: UpdateElectionInput): Promise<Election> {
     const currentElection = await this.findById(id)
 
     if (!currentElection) {
-      throw new Error(`Election "${id}" was not found`)
+      throw new Error(`Election "${id}" was not found.`)
     }
 
-    const updatedElection: Omit<Election, 'id'> = {
+    const updatedElection: Election = {
+      id,
       title: input.title ?? currentElection.title,
-      description:
-        input.description ?? currentElection.description,
+      description: input.description ?? currentElection.description,
       startsAt: input.startsAt ?? currentElection.startsAt,
       endsAt: input.endsAt ?? currentElection.endsAt,
       status: input.status ?? currentElection.status,
@@ -111,28 +115,13 @@ implements ElectionRepository {
       updatedAt: new Date(),
     }
 
-    const firebaseData =
-      FirebaseElectionAdapter.toFirebase(updatedElection)
+    const firebaseData = toFirebase(updatedElection)
 
     await updateDoc(
-      doc(firestore, ELECTIONS_COLLECTION, id),
-      {
-        ...firebaseData,
-        updated_at: Timestamp.fromDate(
-          updatedElection.updatedAt,
-        ),
-      },
+      doc(firestore, ELECTIONS_COLLECTION, id), 
+      firebaseData as DocumentData,
     )
 
-    return {
-      id,
-      ...updatedElection,
-    }
-  }
-
-  async delete(id: string): Promise<void> {
-    await deleteDoc(
-      doc(firestore, ELECTIONS_COLLECTION, id),
-    )
+    return updatedElection
   }
 }
