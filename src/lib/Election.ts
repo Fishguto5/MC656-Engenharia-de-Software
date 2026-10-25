@@ -1,9 +1,9 @@
-export type ElectionStatus =
-  | 'draft'
-  | 'scheduled'
-  | 'open'
-  | 'closed'
-  | 'cancelled'
+export type ElectionStatus
+  = | 'draft'
+    | 'scheduled'
+    | 'open'
+    | 'closed'
+    | 'cancelled'
 
 export interface Election {
   id: string

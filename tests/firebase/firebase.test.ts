@@ -1,14 +1,27 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 // Esse teste tem como objetivo ver se o Firebase foi inicializado como esperado
 // Puxa as variáveis de ambiente, que devem estar dentro de um arquivo .env de cada máquina
 // Importa o objeto do firebase.ts
-const initializeApp = vi.fn(() => ({ name: 'test-app' }))
-const getAnalytics = vi.fn(() => ({ name: 'test-analytics' }))
 
-vi.mock('firebase/app', () => ({ initializeApp }))
-vi.mock('firebase/analytics', () => ({ getAnalytics }))
+const initializeAppMock = vi.fn(() => ({ name: 'test-app' }))
+const getAppsMock = vi.fn(() => [])
+const getAppMock = vi.fn(() => ({ name: 'test-app' }))
+const getAnalyticsMock = vi.fn(() => ({ name: 'test-analytics' }))
+
+vi.mock('firebase/app', () => ({
+  initializeApp: initializeAppMock,
+  getApps: getAppsMock,
+  getApp: getAppMock,
+}))
+
+vi.mock('firebase/analytics', () => ({
+  getAnalytics: getAnalyticsMock,
+}))
 
 describe('configuração do Firebase', () => {
+  const originalEnv = { ...process.env }
+
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
@@ -21,10 +34,14 @@ describe('configuração do Firebase', () => {
     process.env.NEXT_PUBLIC_FIREBASE_APP_ID = 'app-id'
   })
 
+  afterEach(() => {
+    process.env = { ...originalEnv }
+  })
+
   it('inicializa o Firebase com as variáveis públicas configuradas', async () => {
     await import('@/lib/firebase')
 
-    expect(initializeApp).toHaveBeenCalledWith({
+    expect(initializeAppMock).toHaveBeenCalledWith({
       apiKey: 'api-key',
       authDomain: 'example.firebaseapp.com',
       projectId: 'example-project',
@@ -32,6 +49,6 @@ describe('configuração do Firebase', () => {
       messagingSenderId: 'sender-id',
       appId: 'app-id',
     })
-    expect(getAnalytics).toHaveBeenCalledWith({ name: 'test-app' })
+    expect(getAnalyticsMock).toHaveBeenCalledWith({ name: 'test-app' })
   })
 })

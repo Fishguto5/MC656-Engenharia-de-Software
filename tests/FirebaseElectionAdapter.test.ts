@@ -3,7 +3,6 @@ import { fromFirebase, toFirebase } from '@/lib/FirebaseElectionAdapter'
 import { Timestamp } from 'firebase/firestore'
 import { describe, expect, it } from 'vitest'
 
-
 describe('FirebaseElectionAdapter', () => {
   it('converts Firebase data to an Election', () => {
     const startsAt = new Date('2026-11-10T12:00:00.000Z')
@@ -73,7 +72,7 @@ describe('FirebaseElectionAdapter', () => {
         created_at: new Date(),
         updated_at: new Date(),
       }),
-    ).toThrow("[Election:invalid-election] Invalid or missing required field 'title'.")
+    ).toThrow('[Election:invalid-election] Invalid or missing required field \'title\'.')
   })
 
   it('throws an error for an invalid status', () => {
@@ -86,7 +85,7 @@ describe('FirebaseElectionAdapter', () => {
         created_at: new Date(),
         updated_at: new Date(),
       }),
-    ).toThrow("[Election:invalid-election] Invalid status value 'unknown-status'.")
+    ).toThrow('[Election:invalid-election] Invalid status value \'unknown-status\'.')
   })
 
   it('throws an error when election ends before it starts', () => {
@@ -99,7 +98,7 @@ describe('FirebaseElectionAdapter', () => {
         created_at: new Date(),
         updated_at: new Date(),
       }),
-    ).toThrow("[Election:invalid-election] 'startsAt' must be strictly before 'endsAt'.")
+    ).toThrow('[Election:invalid-election] \'startsAt\' must be strictly before \'endsAt\'.')
   })
 
   it('converts an Election to Firebase format', () => {

@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   DocumentData,
   getDoc,
@@ -49,7 +48,7 @@ export class FirebaseElectionRepository {
 
     const snapshot = await getDocs(electionsQuery)
 
-    return snapshot.docs.map((document) =>
+    return snapshot.docs.map(document =>
       fromFirebase(document.id, document.data()),
     )
   }
@@ -118,7 +117,7 @@ export class FirebaseElectionRepository {
     const firebaseData = toFirebase(updatedElection)
 
     await updateDoc(
-      doc(firestore, ELECTIONS_COLLECTION, id), 
+      doc(firestore, ELECTIONS_COLLECTION, id),
       firebaseData as DocumentData,
     )
 
