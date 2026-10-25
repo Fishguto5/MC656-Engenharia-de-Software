@@ -1,7 +1,7 @@
 import { Timestamp } from 'firebase/firestore'
 import { describe, expect, it } from 'vitest'
 
-import { FirebaseElectionAdapter } from '@/infrastructure/firebase/adapters/FirebaseElectionAdapter'
+import { FirebaseElectionAdapter } from '@/src/lib/FirebaseElectionAdapter'
 
 describe('FirebaseElectionAdapter', () => {
   it('converts Firebase data to an Election', () => {
