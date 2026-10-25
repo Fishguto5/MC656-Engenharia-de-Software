@@ -11,9 +11,8 @@ import {
 } from 'firebase/firestore'
 
 import { Election, ElectionStatus } from './Election'
-
-import { firestore } from './firebase'
 import { fromFirebase, toFirebase } from './FirebaseElectionAdapter'
+import { firestore } from './firebase'
 
 // Types
 export interface CreateElectionInput {
@@ -82,7 +81,7 @@ export class FirebaseElectionRepository {
 
     const documentReference = await addDoc(
       collection(firestore, ELECTIONS_COLLECTION),
-      firebaseData as DocumentData, // <-- 2. Cast here for addDoc
+      firebaseData as DocumentData,
     )
 
     const createdElection = await this.findById(documentReference.id)
