@@ -1,0 +1,11 @@
+import type { Timestamp } from 'firebase/firestore'
+
+export interface FirebaseElectionData {
+  title?: unknown
+  description?: unknown
+  starts_at?: Timestamp | Date | string | number | null
+  ends_at?: Timestamp | Date | string | number | null
+  status?: unknown
+  created_at?: Timestamp | Date | string | number | null
+  updated_at?: Timestamp | Date | string | number | null
+}
