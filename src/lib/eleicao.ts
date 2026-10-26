@@ -18,18 +18,22 @@ export type VotacaoPresidente = {
 
 export type ResultadoPrimeiroTurno = [Candidato, Candidato] | Candidato
 
+export function ordenarCandidatosPorVotos(votacao: VotacaoPresidente): Candidato[] {
+  return [...votacao.candidatos].sort((a, b) => b.votos - a.votos)
+}
+
 export function precisaSegundoTurno(votacao: VotacaoPresidente): boolean {
   const votosValidos = votacao.candidatos.reduce((acc, c) => acc + c.votos, 0)
   if (votosValidos == 0) return false
 
-  const maisVotado = [...votacao.candidatos].sort((a, b) => b.votos - a.votos)[0]
+  const maisVotado = ordenarCandidatosPorVotos(votacao)[0]
   return (maisVotado.votos / votosValidos) <= 0.5
 }
 
 export function getCandidatosSegundoTurno(votacao: VotacaoPresidente): [Candidato, Candidato] | null {
   if (!precisaSegundoTurno(votacao)) return null
 
-  const ordenados = [...votacao.candidatos].sort((a, b) => b.votos - a.votos)
+  const ordenados = ordenarCandidatosPorVotos(votacao)
   return [ordenados[0], ordenados[1]]
 }
 
@@ -49,5 +53,5 @@ export function getResultadoPrimeiroTurno(votacao: VotacaoPresidente): Resultado
   const sturno = getCandidatosSegundoTurno(votacao)
   if (sturno !== null) return sturno
 
-  return [...votacao.candidatos].sort((a, b) => b.votos - a.votos)[0]
+  return ordenarCandidatosPorVotos(votacao)[0]
 }

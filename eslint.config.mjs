@@ -5,10 +5,11 @@ import stylistic from '@stylistic/eslint-plugin'
 import js from '@eslint/js'
 
 const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
   js.configs.recommended,
   stylistic.configs.recommended,
+
+  ...nextVitals,
+  ...nextTs,
 
   // @typescript-eslint suggest disabling this rule: https://typescript-eslint.io/troubleshooting/faqs/eslint/
   { files: ['**/*.{ts,tsx,mts,cts}'], rules: { 'no-undef': 'off' } },
