@@ -18,7 +18,7 @@ export type VotacaoPresidente = {
 
 export type ResultadoPrimeiroTurno = [Candidato, Candidato] | Candidato
 
-function ordenarCandidatosPorVotos(votacao: VotacaoPresidente): Candidato[] {
+export function ordenarCandidatosPorVotos(votacao: VotacaoPresidente): Candidato[] {
   return [...votacao.candidatos].sort((a, b) => b.votos - a.votos)
 }
 
