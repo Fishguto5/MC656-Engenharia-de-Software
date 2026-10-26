@@ -85,16 +85,46 @@ export const VAGAS_DEPUTADO_FEDERAL = {
 
 export type UF = keyof typeof VAGAS_DEPUTADO_FEDERAL
 
+// Nome da agremiação (partido ou federação) pela qual o candidato concorre.
+export function agremiacaoDe(candidato: Candidato): string {
+  return candidato.federacao ?? candidato.partido
+}
+
+// Votos de legenda por agremiação, já validados por `criarVotosLegenda`.
+export type VotosLegenda = ReadonlyMap<string, number>
+
+// Rejeita agremiações desconhecidas, duplicadas e quantidades inválidas.
+export function criarVotosLegenda(
+  agremiacoes: readonly string[],
+  entradas: readonly (readonly [string, number])[],
+): VotosLegenda {
+  const validas = new Set(agremiacoes)
+  const votos = new Map<string, number>()
+
+  for (const [nome, quantidade] of entradas) {
+    if (!validas.has(nome)) {
+      throw new RangeError(`Agremiação desconhecida: ${nome}`)
+    }
+    if (votos.has(nome)) {
+      throw new RangeError(`Votos de legenda duplicados: ${nome}`)
+    }
+    validarVotos([quantidade])
+    votos.set(nome, quantidade)
+  }
+
+  return votos
+}
+
 // Eleição proporcional de uma circunscrição (Deputado Federal, Estadual ou
-// Distrital). `vagas` é o número de cadeiras em disputa. `votosLegenda` guarda
-// os votos dados só ao partido (ou à federação), indexados pelo nome da
-// agremiação: o campo `federacao` do candidato, se houver, ou o `partido`.
+// Distrital). `vagas` é o número de cadeiras em disputa. `agremiacoes` é o
+// conjunto válido da circunscrição (nomes de partidos ou federações).
 export type VotacaoDeputado = {
   id: string
   data: Date
   vagas: number
+  agremiacoes: readonly string[]
   candidatos: Candidato[]
-  votosLegenda: Record<string, number>
+  votosLegenda: VotosLegenda
   votosBrancos: number
   votosNulos: number
 }
@@ -154,10 +184,6 @@ export function calcularQuocientePartidario(votosValidosAgremiacao: number, quoc
   return Math.floor(votosValidosAgremiacao / quocienteEleitoral)
 }
 
-function agremiacaoDe(candidato: Candidato): string {
-  return candidato.federacao ?? candidato.partido
-}
-
 // votos >= percentual% do QE, só com inteiros (sem erro de ponto flutuante).
 function atingePercentual(votos: number, percentual: number, quocienteEleitoral: number): boolean {
   return votos * 100 >= quocienteEleitoral * percentual
@@ -168,44 +194,46 @@ function validarVotacaoDeputado(votacao: VotacaoDeputado): void {
     throw new RangeError('O número de vagas deve ser um inteiro positivo.')
   }
 
+  const validas = new Set(votacao.agremiacoes)
+
+  for (const candidato of votacao.candidatos) {
+    if (!validas.has(agremiacaoDe(candidato))) {
+      throw new RangeError(`Candidato ${candidato.id} de agremiação desconhecida: ${agremiacaoDe(candidato)}`)
+    }
+  }
+
+  // `VotosLegenda` é só um tipo: o Map pode ter sido montado sem `criarVotosLegenda`.
+  for (const nome of votacao.votosLegenda.keys()) {
+    if (!validas.has(nome)) {
+      throw new RangeError(`Agremiação desconhecida: ${nome}`)
+    }
+  }
+
   validarVotos([
     ...votacao.candidatos.map(c => c.votos),
-    ...Object.values(votacao.votosLegenda),
+    ...votacao.votosLegenda.values(),
     votacao.votosBrancos,
     votacao.votosNulos,
   ])
 }
 
 function agrupar(votacao: VotacaoDeputado): Agremiacao[] {
-  const mapa = new Map<string, Agremiacao>()
-
-  const obter = (nome: string): Agremiacao => {
-    let agremiacao = mapa.get(nome)
-
-    if (!agremiacao) {
-      agremiacao = {
-        nome,
-        votosNominais: 0,
-        votosLegenda: 0,
-        votosValidos: 0,
-        quocientePartidario: 0,
-        vagasObtidas: 0,
-        vagasSobras: 0,
-        candidatos: [],
-        eleitos: [],
-      }
-      mapa.set(nome, agremiacao)
-    }
-
-    return agremiacao
-  }
+  const mapa = new Map<string, Agremiacao>(
+    votacao.agremiacoes.map(nome => [nome, {
+      nome,
+      votosNominais: 0,
+      votosLegenda: votacao.votosLegenda.get(nome) ?? 0,
+      votosValidos: 0,
+      quocientePartidario: 0,
+      vagasObtidas: 0,
+      vagasSobras: 0,
+      candidatos: [],
+      eleitos: [],
+    }]),
+  )
 
   for (const candidato of votacao.candidatos) {
-    obter(agremiacaoDe(candidato)).candidatos.push(candidato)
-  }
-
-  for (const [nome, votos] of Object.entries(votacao.votosLegenda)) {
-    obter(nome).votosLegenda = votos
+    mapa.get(agremiacaoDe(candidato))!.candidatos.push(candidato)
   }
 
   const agremiacoes = [...mapa.values()]
