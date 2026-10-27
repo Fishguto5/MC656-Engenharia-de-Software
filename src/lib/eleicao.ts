@@ -1,24 +1,19 @@
+import { VotosCandidato } from "@/interfaces/eleicaoInterfaces"
+
 type Estado = string
 type Local = 'Brasil' | Estado
-
-export type Candidato = {
-  id: string
-  nome: string
-  partido: string
-  votos: number
-}
 
 export type VotacaoPresidente = {
   id: string
   data: Date
-  candidatos: Candidato[]
+  candidatos: VotosCandidato[]
   votosBrancos: number
   votosNulos: number
 }
 
-export type ResultadoPrimeiroTurno = [Candidato, Candidato] | Candidato
+export type ResultadoPrimeiroTurno = [VotosCandidato, VotosCandidato] | VotosCandidato
 
-export function ordenarCandidatosPorVotos(votacao: VotacaoPresidente): Candidato[] {
+export function ordenarCandidatosPorVotos(votacao: VotacaoPresidente): VotosCandidato[] {
   return [...votacao.candidatos].sort((a, b) => b.votos - a.votos)
 }
 
@@ -30,7 +25,7 @@ export function precisaSegundoTurno(votacao: VotacaoPresidente): boolean {
   return (maisVotado.votos / votosValidos) <= 0.5
 }
 
-export function getCandidatosSegundoTurno(votacao: VotacaoPresidente): [Candidato, Candidato] | null {
+export function getCandidatosSegundoTurno(votacao: VotacaoPresidente): [VotosCandidato, VotosCandidato] | null {
   if (!precisaSegundoTurno(votacao)) return null
 
   const ordenados = ordenarCandidatosPorVotos(votacao)

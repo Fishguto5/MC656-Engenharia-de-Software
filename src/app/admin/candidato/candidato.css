@@ -1,0 +1,75 @@
+main.signup-candidate-page {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 32px 20px;
+}
+
+main.center-page {
+  justify-content: center;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  width: min(100%, 768px);
+  height: 50px;
+}
+
+header .adicionar-candidato {
+  background: #333333;
+  border: 0;
+  border-radius: 0;
+  color: #ffffff;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+
+  font:
+    700 0.9rem Arial,
+    Helvetica,
+    sans-serif;
+  height: 27px;
+  margin-top: 10px;
+  padding: 0;
+  transition: background-color 120ms ease;
+  width: 100%;
+}
+
+header .adicionar-candidato:hover {
+  background: #1f1f1f;
+}
+
+header .adicionar-candidato:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
+section.candidate-list {
+  width: min(100%, 768px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+section.candidate-list h1 {
+  color: #080808;
+  font-size: clamp(1.75rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 48px;
+  text-align: center;
+}
+
+.form-field {
+  align-items: start;
+  grid-template-columns: 150px 1fr;
+  margin-bottom: 20px;
+}

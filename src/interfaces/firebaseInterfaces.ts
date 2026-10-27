@@ -20,6 +20,7 @@ export type CandidatoDocument = {
   nome: string
   partido: string
   dataNascimento: Timestamp
+  isActive: boolean
   federacao?: string
 }
 
