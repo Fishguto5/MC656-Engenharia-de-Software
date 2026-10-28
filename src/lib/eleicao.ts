@@ -1,4 +1,4 @@
-import { VotosCandidato } from "@/interfaces/eleicaoInterfaces"
+import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 
 type Estado = string
 type Local = 'Brasil' | Estado

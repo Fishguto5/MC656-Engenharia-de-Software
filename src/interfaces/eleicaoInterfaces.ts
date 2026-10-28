@@ -1,4 +1,4 @@
-import { ElectionStatus } from "./firebaseInterfaces"
+import { ElectionStatus } from './firebaseInterfaces'
 
 // Candidato
 export interface Candidato {
@@ -27,5 +27,3 @@ export interface BaseElection {
   createdAt: Date
   updatedAt: Date
 }
-
-

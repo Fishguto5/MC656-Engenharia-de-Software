@@ -1,6 +1,6 @@
 // Soma dos votos nominais. Votos em branco e nulos não são computados
 
-import { VotosCandidato } from "@/interfaces/eleicaoInterfaces"
+import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 
 // (CF, art. 77, § 2º; Lei 9.504/97, art. 2º).
 export function somarVotos(candidatos: VotosCandidato[]): number {
