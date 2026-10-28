@@ -121,7 +121,7 @@ export default function EditarCandidato() {
         </div>
 
         <div className="form-field">
-          <label htmlFor="federation">Federação</label>
+          <label htmlFor="federation">Federação (Opicional)</label>
           <input
             type="text"
             name="federation"

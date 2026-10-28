@@ -1,5 +1,5 @@
 import { Candidato } from '@/interfaces/eleicaoInterfaces'
-import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateDoc, getDoc, addDoc, QueryDocumentSnapshot, DocumentData } from '@firebase/firestore'
+import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateDoc, getDoc, addDoc, QueryDocumentSnapshot, DocumentData, writeBatch } from 'firebase/firestore'
 import { candidateAdapter, CandidatoRawDocument } from '../adapter/firebaseCandidateAdapter'
 import { firestore } from '../firebase'
 
@@ -90,8 +90,49 @@ class FirebaseCandidatesRepository {
     await addDoc(collection(firestore, CANDIDATES_COLLECTION), data)
   }
 
+  async createBatch(domain: Candidato[]): Promise<Candidato[]> {
+    const batch = writeBatch(firestore)
+    const collectionRef = collection(firestore, CANDIDATES_COLLECTION)
+
+    // Lista para guardar os candidatos formatados com seus IDs reais do Firestore
+    const candidatosComId: Candidato[] = []
+
+    domain.forEach((candidato) => {
+      const dbData = candidateAdapter.toDB(candidato)
+      const data = {
+        nome: dbData.nome,
+        partido: dbData.partido,
+        dataNascimento: dbData.dataNascimento,
+        federacao: dbData.federacao ?? null,
+        isActive: dbData.isActive,
+      }
+
+      // Cria a referência gerando o ID único antecipadamente
+      const candidateRef = doc(collectionRef)
+
+      batch.set(candidateRef, data)
+
+      // Adiciona o candidato com o ID real na lista de retorno
+      candidatosComId.push({
+        ...candidato,
+        id: candidateRef.id,
+      })
+    })
+
+    await batch.commit()
+
+    return candidatosComId
+  }
+
   async update(domain: Candidato): Promise<void> {
-    const data = candidateAdapter.toDB(domain)
+    const dbData = candidateAdapter.toDB(domain)
+    const data = {
+      nome: dbData.nome,
+      partido: dbData.partido,
+      federacao: dbData.federacao ?? null,
+      dataNascimento: dbData.dataNascimento,
+      isActive: dbData.isActive,
+    }
     const candidateRef = doc(firestore, CANDIDATES_COLLECTION, domain.id)
 
     await updateDoc(candidateRef, data)
