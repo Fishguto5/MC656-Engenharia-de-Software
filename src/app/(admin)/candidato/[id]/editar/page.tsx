@@ -2,10 +2,11 @@
 
 import { ChangeEvent, useEffect, useState } from 'react'
 import '../../candidato.css' // Ajustado o caminho por causa da pasta [id]/editar
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
 
 export default function EditarCandidato() {
+  const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
@@ -81,6 +82,7 @@ export default function EditarCandidato() {
 
     try {
       await firebaseCandidateRepository.update(submitData)
+      router.refresh()
       alert('Candidato atualizado com sucesso!')
     }
     catch (error) {

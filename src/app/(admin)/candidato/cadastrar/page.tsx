@@ -3,8 +3,10 @@
 import { ChangeEvent, useState } from 'react'
 import '../candidato.css'
 import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
+import { useRouter } from 'next/navigation'
 
 export default function CadastrarCandidato() {
+  const router = useRouter()
   const [formsData, setFormsData] = useState({
     name: '',
     party: '',
@@ -59,6 +61,7 @@ export default function CadastrarCandidato() {
       await firebaseCandidateRepository.create(submitData)
       alert('Candidato criado com sucesso!')
       cleanForms()
+      router.refresh()
     }
     catch (error) {
       console.error('Erro ao salvar candidato:', error)

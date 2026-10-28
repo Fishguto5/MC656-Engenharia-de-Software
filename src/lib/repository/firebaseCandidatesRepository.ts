@@ -34,6 +34,7 @@ class FirebaseCandidatesRepository {
     const candidatesQuery = query(
       collection(firestore, CANDIDATES_COLLECTION),
       where('isActive', '==', true),
+      orderBy('partido', 'asc'),
     )
 
     const snapshot = await getDocs(candidatesQuery)
@@ -61,7 +62,7 @@ class FirebaseCandidatesRepository {
   async deactivate(id: string): Promise<void> {
     const candidateRef = doc(firestore, CANDIDATES_COLLECTION, id)
 
-    updateDoc(candidateRef, {
+    await updateDoc(candidateRef, {
       isActive: false,
     })
   }
@@ -76,14 +77,14 @@ class FirebaseCandidatesRepository {
       isActive: dbData.isActive,
     }
 
-    addDoc(collection(firestore, CANDIDATES_COLLECTION), data)
+    await addDoc(collection(firestore, CANDIDATES_COLLECTION), data)
   }
 
   async update(domain: Candidato): Promise<void> {
     const data = candidateAdapter.toDB(domain)
     const candidateRef = doc(firestore, CANDIDATES_COLLECTION, domain.id)
 
-    updateDoc(candidateRef, data)
+    await updateDoc(candidateRef, data)
   }
 }
 
