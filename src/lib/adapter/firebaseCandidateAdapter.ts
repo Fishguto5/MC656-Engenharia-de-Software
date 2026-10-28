@@ -21,7 +21,7 @@ interface CandidateToDBOptions {
   isActive: boolean
 }
 
-export class CandidateAdapter implements DatabaseAdapter<CandidatoDocument, Candidato, CandidateToDBOptions, CandidatoRawDocument> {
+class CandidateAdapter implements DatabaseAdapter<CandidatoDocument, Candidato, CandidateToDBOptions, CandidatoRawDocument> {
   fromDB(raw: CandidatoRawDocument): Candidato {
     const parsed = candidatoRawSchema.parse(raw)
 

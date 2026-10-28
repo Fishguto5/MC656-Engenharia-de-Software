@@ -3,7 +3,7 @@ import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateD
 import { candidateAdapter, CandidatoRawDocument } from '../adapter/firebaseCandidateAdapter'
 import { firestore } from '../firebase'
 
-const CANDIDATES_COLLECTION = 'candidatos'
+export const CANDIDATES_COLLECTION = 'candidatos'
 
 class FirebaseCandidatesRepository {
   private mapSnapshotToCandidates(snapshot: QuerySnapshot): Candidato[] {
