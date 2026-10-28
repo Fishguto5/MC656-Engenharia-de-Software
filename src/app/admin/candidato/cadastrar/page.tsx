@@ -1,56 +1,16 @@
 'use client'
 
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useState } from 'react'
 import '../candidato.css'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
 
 export default function CadastrarCandidato() {
-  const router = useRouter()
-  // Get Candidate to update
-  const searchParams = useSearchParams()
-  const id = searchParams.get('id')
-
   const [formsData, setFormsData] = useState({
     name: '',
     party: '',
     federation: '',
     DoB: '',
   })
-  const [editar, setEditar] = useState(false)
-
-  useEffect(() => {
-    if (id) {
-      // Flag to prevent state updates if the component unmounts mid-fetch
-      let isMounted = true
-      const candId = id
-
-      async function getandidato() {
-        try {
-          const candidato = await firebaseCandidateRepository.findById(candId)
-          if (isMounted && candidato) {
-            setFormsData({
-              name: candidato.nome,
-              party: candidato.partido,
-              DoB: candidato.dataNascimento.toISOString().split('T')[0],
-              federation: candidato.federacao ? candidato.federacao : '',
-
-            })
-            setEditar(true)
-          }
-        }
-        catch (error) {
-          console.error(error)
-        }
-      }
-
-      getandidato()
-
-      return () => {
-        isMounted = false
-      }
-    }
-  }, [id])
 
   function cleanForms() {
     setFormsData({
@@ -61,7 +21,7 @@ export default function CadastrarCandidato() {
     })
   }
 
-  function handleChange(e: ChangeEvent<HTMLInputElement, HTMLInputElement>) {
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
     setFormsData({
       ...formsData,
       [e.target.name]: e.target.value,
@@ -79,7 +39,7 @@ export default function CadastrarCandidato() {
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault() // evita recarregar a pagina
+    e.preventDefault()
 
     const validDate = InputDateToDate(formsData.DoB)
     if (!validDate) {
@@ -88,7 +48,7 @@ export default function CadastrarCandidato() {
     }
 
     const submitData = {
-      id: id? id: '',
+      id: '',
       nome: formsData.name,
       partido: formsData.party,
       dataNascimento: validDate,
@@ -96,14 +56,9 @@ export default function CadastrarCandidato() {
     }
 
     try {
-      if (editar) {
-        await firebaseCandidateRepository.update(submitData)
-        router.push('/admin/candidato')
-      }
-      else {
-        await firebaseCandidateRepository.create(submitData)
-        cleanForms()
-      }
+      await firebaseCandidateRepository.create(submitData)
+      alert('Candidato criado com sucesso!')
+      cleanForms()
     }
     catch (error) {
       console.error('Erro ao salvar candidato:', error)
@@ -113,12 +68,8 @@ export default function CadastrarCandidato() {
 
   return (
     <main className="signup-candidate-page center-page">
-      <h1>
-        {id ? 'Editar' : 'Criar'}
-        {' '}
-        Candidato
-      </h1>
-      <form method='POST' action="#" className="signup-form" onSubmit={handleSubmit}>
+      <h1>Criar Candidato</h1>
+      <form method="POST" action="#" className="signup-form" onSubmit={handleSubmit}>
         <div className="form-field">
           <label htmlFor="name">Nome</label>
           <input
@@ -168,9 +119,7 @@ export default function CadastrarCandidato() {
         </div>
 
         <button type="submit">Salvar</button>
-
       </form>
-
     </main>
   )
 }
