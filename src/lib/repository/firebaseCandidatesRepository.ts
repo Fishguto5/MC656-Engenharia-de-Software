@@ -67,7 +67,15 @@ class FirebaseCandidatesRepository {
   }
 
   async create(domain: Candidato): Promise<void> {
-    const {id, ...data} = candidateAdapter.toDB(domain)
+    const dbData = candidateAdapter.toDB(domain)
+    const data = {
+      nome: dbData.nome,
+      partido: dbData.partido,
+      dataNascimento: dbData.dataNascimento,
+      federacao: dbData.federacao,
+      isActive: dbData.isActive,
+    }
+
     addDoc(collection(firestore, CANDIDATES_COLLECTION), data)
   }
 
