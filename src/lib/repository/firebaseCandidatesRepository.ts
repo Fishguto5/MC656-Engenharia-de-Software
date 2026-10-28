@@ -1,21 +1,26 @@
 import { Candidato } from '@/interfaces/eleicaoInterfaces'
-import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
-import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateDoc, getDoc, addDoc } from 'firebase/firestore'
-import { candidateAdapter } from '../adapter/firebaseCandidateAdapter'
+import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateDoc, getDoc, addDoc, QueryDocumentSnapshot, DocumentData } from '@firebase/firestore'
+import { candidateAdapter, CandidatoRawDocument } from '../adapter/firebaseCandidateAdapter'
 import { firestore } from '../firebase'
 
 const CANDIDATES_COLLECTION = 'candidatos'
 
 class FirebaseCandidatesRepository {
   private mapSnapshotToCandidates(snapshot: QuerySnapshot): Candidato[] {
-    return snapshot.docs.flatMap((documento) => {
-      const rawData: CandidatoDocument = {
+    return snapshot.docs.flatMap((documento: QueryDocumentSnapshot<DocumentData>) => {
+      const rawData: CandidatoRawDocument = {
         id: documento.id,
-        ...(documento.data() as Omit<CandidatoDocument, 'id'>),
+        ...(documento.data() as Omit<CandidatoRawDocument, 'id'>),
       }
 
-      const candidato = candidateAdapter.fromDB(rawData)
-      return candidato ? [candidato] : []
+      try {
+        const candidato = candidateAdapter.fromDB(rawData)
+        return candidato ? [candidato] : []
+      }
+      catch (error) {
+        console.error(`Erro ao validar/converter candidato ID ${documento.id}:`, error)
+        return [] // Ignora o registro inválido
+      }
     })
   }
 
@@ -50,13 +55,18 @@ class FirebaseCandidatesRepository {
       return null
     }
 
-    const rawData: CandidatoDocument = {
+    const rawData: CandidatoRawDocument = {
       id: snapshot.id,
-      ...(snapshot.data() as Omit<CandidatoDocument, 'id'>),
+      ...(snapshot.data() as Omit<CandidatoRawDocument, 'id'>),
     }
 
-    const candidato = candidateAdapter.fromDB(rawData)
-    return candidato
+    try {
+      return candidateAdapter.fromDB(rawData)
+    }
+    catch (error) {
+      console.error(`Candidato com ID ${id} possui dados inválidos:`, error)
+      return null
+    }
   }
 
   async deactivate(id: string): Promise<void> {

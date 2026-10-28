@@ -1,4 +1,4 @@
-export interface DatabaseAdapter<TDatabase, TApp, TOptions = void> {
-  fromDB(raw: TDatabase): TApp
+export interface DatabaseAdapter<TDatabase, TApp, TOptions = void, TRaw = TDatabase> {
+  fromDB(raw: TRaw): TApp
   toDB(domain: TApp, options?: TOptions): TDatabase
 }
