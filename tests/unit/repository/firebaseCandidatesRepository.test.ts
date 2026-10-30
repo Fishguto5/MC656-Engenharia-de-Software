@@ -1,7 +1,7 @@
 import { Candidato } from '@/interfaces/eleicaoInterfaces'
 import { CANDIDATES_COLLECTION, firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
 import { addDoc, collection, doc, DocumentSnapshot, getDoc, getDocs, QuerySnapshot, updateDoc, writeBatch } from 'firebase/firestore'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mockups globais do Firestore
 vi.mock('firebase/firestore', async (importOriginal) => {
@@ -35,10 +35,21 @@ vi.mock('firebase/firestore', async (importOriginal) => {
   }
 })
 
-// Testes
 describe('FirebaseCandidateRepository', () => {
+  // Data fixa de referência para congelar o relógio nos testes (30 de Outubro de 2026)
+  const MOCK_TODAY = new Date('2026-10-30T12:00:00')
+
   beforeEach(() => {
     vi.clearAllMocks()
+
+    // Trava o relógio do sistema na data simulada
+    vi.useFakeTimers()
+    vi.setSystemTime(MOCK_TODAY)
+  })
+
+  afterEach(() => {
+    // Restaura o relógio real do sistema para não impactar outros arquivos de teste
+    vi.useRealTimers()
   })
 
   describe('findAll', () => {
@@ -51,6 +62,8 @@ describe('FirebaseCandidateRepository', () => {
               id: '1',
               nome: 'Ana Silva',
               partido: 'Partido A',
+              dataNascimento: '1990-01-01',
+              isActive: true,
             }),
           },
           {
@@ -59,6 +72,8 @@ describe('FirebaseCandidateRepository', () => {
               id: '2',
               nome: 'Carlos Souza',
               partido: 'Partido B',
+              dataNascimento: '1985-05-15',
+              isActive: true,
             }),
           },
         ],
@@ -106,6 +121,7 @@ describe('FirebaseCandidateRepository', () => {
               id: '1',
               nome: 'Ana Silva',
               partido: 'Partido A',
+              dataNascimento: '1990-01-01',
               isActive: true,
             }),
           },
@@ -136,7 +152,7 @@ describe('FirebaseCandidateRepository', () => {
 
       vi.mocked(getDocs).mockResolvedValue(mockQuerySnapshot)
 
-      const candidatos = await firebaseCandidateRepository.findAll()
+      const candidatos = await firebaseCandidateRepository.findAllActive()
 
       expect(getDocs).toHaveBeenCalledTimes(1)
       expect(candidatos).toHaveLength(0)
@@ -152,6 +168,7 @@ describe('FirebaseCandidateRepository', () => {
           nome: 'Maria Oliveira',
           partido: 'Partido X',
           dataNascimento: '1992-04-10',
+          isActive: true,
         }),
       } as unknown as DocumentSnapshot
 
@@ -168,7 +185,7 @@ describe('FirebaseCandidateRepository', () => {
       })
     })
 
-    it('deve retornar null quando o documento NÃO existir', async () => {
+    it('deve retornar null quando o documento não existir', async () => {
       const mockSnapshot = {
         exists: () => false,
       } as unknown as DocumentSnapshot
@@ -196,13 +213,14 @@ describe('FirebaseCandidateRepository', () => {
       )
     })
 
-    it('deve criar um novo candidato corretamente (create)', async () => {
+    it('deve criar um novo candidato com sucesso quando possuir 21 anos ou mais (create)', async () => {
+      // Como o tempo está travado em 2026-10-30, quem nasceu em 2005-10-30 tem exatamente 21 anos
       const novoCandidato: Candidato = {
         id: '',
         nome: 'João da Silva',
         partido: 'Partido A',
         federacao: undefined,
-        dataNascimento: new Date('1990-01-01'),
+        dataNascimento: new Date('2005-10-30T00:00:00'),
       }
 
       await firebaseCandidateRepository.create(novoCandidato)
@@ -219,13 +237,28 @@ describe('FirebaseCandidateRepository', () => {
       )
     })
 
-    it('deve criar múltiplos candidatos em lote (createBatch)', async () => {
+    it('não deve criar candidato com menos de 21 anos (create)', async () => {
+      // Nascido em 2005-10-31 (tem 20 anos e 364 dias em relação a 2026-10-30)
+      const candidatoJovem: Candidato = {
+        id: '',
+        nome: 'Candidato Jovem',
+        partido: 'Partido A',
+        federacao: undefined,
+        dataNascimento: new Date('2005-10-31T00:00:00'),
+      }
+
+      await firebaseCandidateRepository.create(candidatoJovem)
+
+      expect(addDoc).not.toHaveBeenCalled()
+    })
+
+    it('deve criar múltiplos candidatos em lote quando possuírem 21 anos ou mais (createBatch)', async () => {
       const listaCandidatos: Candidato[] = [
         {
           id: '',
           nome: 'Candidato 1',
           partido: 'Partido A',
-          dataNascimento: new Date('1985-05-10'),
+          dataNascimento: new Date('1995-05-10T00:00:00'),
         },
       ]
 
@@ -238,12 +271,12 @@ describe('FirebaseCandidateRepository', () => {
       expect(batchInstance.commit).toHaveBeenCalledTimes(1)
     })
 
-    it('deve atualizar os dados do candidato (update)', async () => {
+    it('deve atualizar os dados do candidato quando tiver mais de 21 anos (update)', async () => {
       const candidatoAtualizado: Candidato = {
         id: '456',
         nome: 'Maria Atualizada',
         partido: 'Partido B',
-        dataNascimento: new Date('1995-08-20'),
+        dataNascimento: new Date('1998-08-20T00:00:00'),
       }
 
       await firebaseCandidateRepository.update(candidatoAtualizado)

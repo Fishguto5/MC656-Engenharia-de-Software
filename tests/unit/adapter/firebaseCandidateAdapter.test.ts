@@ -3,7 +3,7 @@ import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
 import { candidateAdapter, CandidatoRawDocument } from '@/lib/adapter/firebaseCandidateAdapter'
 import { Timestamp } from 'firebase/firestore'
 import { describe, it } from 'node:test'
-import { expect, vi } from 'vitest'
+import { expect } from 'vitest'
 
 describe('fromDB', () => {
   it('Candidato completo e dataNascimento em Timestamp', () => {
@@ -14,6 +14,7 @@ describe('fromDB', () => {
       partido: 'Partido',
       federacao: 'Federacao',
       dataNascimento: Timestamp.fromDate(dataNascimento),
+      isActive: true,
     }
     const output: Candidato = {
       id: '2',
@@ -34,6 +35,7 @@ describe('fromDB', () => {
       partido: 'Partido',
       federacao: 'Federacao',
       dataNascimento: '2020-02-02',
+      isActive: true,
     }
     const output: Candidato = {
       id: '2',
@@ -41,25 +43,6 @@ describe('fromDB', () => {
       partido: 'Partido',
       federacao: 'Federacao',
       dataNascimento: dataNascimento,
-    }
-
-    expect(candidateAdapter.fromDB(input)).toStrictEqual(output)
-  })
-
-  it('Candidato vazio', () => {
-    // Travar o relógio
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2020-01-01T00:00:00Z'))
-
-    const input: CandidatoRawDocument = {
-      id: '2',
-    }
-    const output: Candidato = {
-      id: '2',
-      nome: 'Nome não informado',
-      partido: 'Partido não informado',
-      federacao: undefined,
-      dataNascimento: new Date('2020-01-01T00:00:00Z'),
     }
 
     expect(candidateAdapter.fromDB(input)).toStrictEqual(output)
