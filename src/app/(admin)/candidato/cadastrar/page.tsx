@@ -4,6 +4,7 @@ import { ChangeEvent, useState } from 'react'
 import '../candidato.css'
 import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
 import { useRouter } from 'next/navigation'
+import CandidatoForm from '@/components/CandadatoForm/CandidatoForm'
 
 export default function CadastrarCandidato() {
   const router = useRouter()
@@ -40,7 +41,7 @@ export default function CadastrarCandidato() {
     return null
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
 
     const validDate = InputDateToDate(formsData.DoB)
@@ -72,57 +73,15 @@ export default function CadastrarCandidato() {
   return (
     <main className="signup-candidate-page center-page">
       <h1>Criar Candidato</h1>
-      <form method="POST" action="#" className="signup-form" onSubmit={handleSubmit}>
-        <div className="form-field">
-          <label htmlFor="name">Nome</label>
-          <input
-            type="text"
-            name="name"
-            id="name"
-            autoComplete="name"
-            required
-            value={formsData.name}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="party">Partido</label>
-          <input
-            type="text"
-            name="party"
-            id="party"
-            required
-            value={formsData.party}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="federation">Federação (Opicional)</label>
-          <input
-            type="text"
-            name="federation"
-            id="federation"
-            value={formsData.federation}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="DoB">Data de Nascimento</label>
-          <input
-            type="date"
-            name="DoB"
-            id="DoB"
-            required
-            value={formsData.DoB}
-            onChange={handleChange}
-          />
-        </div>
-
-        <button type="submit">Salvar</button>
-      </form>
+      <CandidatoForm
+        name={formsData.name}
+        party={formsData.party}
+        federation={formsData.federation}
+        DoB={formsData.DoB}
+        handleChange={handleChange}
+        handleSubmit={handleSubmit}
+      >
+      </CandidatoForm>
     </main>
   )
 }

@@ -49,25 +49,46 @@ export default function CandidatoClientView({ initialCandidatos }: { initialCand
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          const candidatosProcessados: Candidato[] = results.data.map((row) => {
-            const dataString = row.dataNascimento ? row.dataNascimento.trim() : ''
-            const dataNascimentoDate = dataString ? new Date(dataString) : new Date()
+          // Processa e filtra os candidatos inválidos em uma única etapa
+          const candidatosProcessados: Candidato[] = results.data
+            .map((row) => {
+              const nome = row.nome ? row.nome.trim() : ''
+              const partido = row.partido ? row.partido.trim() : ''
+              const dataString = row.dataNascimento ? row.dataNascimento.trim() : ''
 
-            return {
-              id: '',
-              nome: row.nome ?? '',
-              partido: row.partido ?? '',
-              dataNascimento: dataNascimentoDate,
-              federacao: row.federacao ? row.federacao.trim() : null,
-            } as Candidato
-          })
+              // 1. Verifica se falta nome, partido ou data
+              if (!nome || !partido || !dataString) {
+                return null
+              }
 
-          console.log('Dados tratados:', candidatosProcessados)
+              // 2. Converte e valida a data
+              const dataNascimentoDate = new Date(`${dataString}T00:00:00`)
+
+              // 3. Verifica se a data gerada é inválida
+              if (isNaN(dataNascimentoDate.getTime())) {
+                // console.warn(`Data inválida encontrada para o candidato: ${nome}. Data informada: "${dataString}"`)
+                return null
+              }
+
+              return {
+                id: '',
+                nome,
+                partido,
+                dataNascimento: dataNascimentoDate,
+                federacao: row.federacao ? row.federacao.trim() : undefined,
+              } as Candidato
+            })
+            .filter((candidato): candidato is Candidato => candidato !== null) // Remove todos os nulos (inválidos/faltantes)
+
+          if (candidatosProcessados.length === 0) {
+            alert('Nenhum candidato válido foi encontrado no arquivo CSV.')
+            return
+          }
 
           // Salva no Firebase e recebe os candidatos já com os IDs reais gerados
           const novosCandidatos = await firebaseCandidateRepository.createBatch(candidatosProcessados)
 
-          // Atualiza o estado local imediatamente unindo os antigos com os novos
+          // Atualiza o estado local
           setCandidatos(prev => [...prev, ...novosCandidatos].sort((a, b) => a.partido.localeCompare(b.partido)))
 
           // Limpa o input de arquivo
@@ -77,7 +98,6 @@ export default function CandidatoClientView({ initialCandidatos }: { initialCand
 
           // Refresh
           router.refresh()
-          console.log('Importação concluída com sucesso!')
         }
         catch (error) {
           console.error('Erro no upload:', error)
