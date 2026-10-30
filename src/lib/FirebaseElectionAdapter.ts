@@ -1,6 +1,7 @@
 import { DocumentData, Timestamp } from 'firebase/firestore'
-import { ElectionStatus, Election } from './Election'
 import { FirebaseElectionData, FirebaseElectionDocument } from './FirebaseElectionData'
+import { BaseElection } from '@/interfaces/eleicaoInterfaces'
+import { ElectionStatus } from '@/interfaces/firebaseInterfaces'
 
 // Help Functions
 function requireNonEmptyString(value: unknown, fieldName: string, id: string): string {
@@ -61,7 +62,7 @@ function validateDateOrder(startsAt: Date, endsAt: Date, id: string): void {
 export function fromFirebase(
   id: string,
   rawData: FirebaseElectionData | DocumentData,
-): Election {
+): BaseElection {
   const data = rawData as FirebaseElectionData
 
   const startsAt = requireDate(data.starts_at, 'starts_at', id)
@@ -81,7 +82,7 @@ export function fromFirebase(
   }
 }
 
-export function toFirebase(election: Election): FirebaseElectionDocument {
+export function toFirebase(election: BaseElection): FirebaseElectionDocument {
   return {
     title: election.title,
     description: election.description,

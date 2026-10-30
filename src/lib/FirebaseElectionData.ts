@@ -1,5 +1,5 @@
+import { ElectionStatus } from '@/interfaces/firebaseInterfaces'
 import type { Timestamp } from 'firebase/firestore'
-import { ElectionStatus } from './Election'
 
 export interface FirebaseElectionData {
   title?: unknown
