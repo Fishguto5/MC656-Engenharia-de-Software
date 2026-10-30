@@ -4,17 +4,16 @@ import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
 import { DatabaseAdapter } from './databaseInterface'
 import { Timestamp } from 'firebase/firestore'
 
-// Schema do Zod para o dado bruto do Firebase
+// Apenas 'federacao' é opcional/nullable.
 const candidatoRawSchema = z.object({
   id: z.string(),
-  nome: z.string().nullable().optional(),
-  partido: z.string().nullable().optional(),
-  federacao: z.string().nullable().optional(),
-  dataNascimento: z.union([z.instanceof(Timestamp), z.string(), z.null()]).optional(),
-  isActive: z.boolean().nullable().optional(),
+  nome: z.string(), // Obrigatório
+  partido: z.string(), // Obrigatório
+  federacao: z.string().nullable().optional(), // Exceção (opcional)
+  dataNascimento: z.union([z.instanceof(Timestamp), z.string()]), // Obrigatório
+  isActive: z.boolean(), // Obrigatório
 })
 
-// tipo bruto automaticamente do Zod
 export type CandidatoRawDocument = z.infer<typeof candidatoRawSchema>
 
 interface CandidateToDBOptions {
@@ -23,7 +22,7 @@ interface CandidateToDBOptions {
 
 class CandidateAdapter implements DatabaseAdapter<CandidatoDocument, Candidato, CandidateToDBOptions, CandidatoRawDocument> {
   fromDB(raw: CandidatoRawDocument): Candidato {
-    const parsed = candidatoRawSchema.parse(raw)
+    const parsed = candidatoRawSchema.parse(raw) // Se faltar algum obrigatório, o Zod lança um erro
 
     let dataNascimentoDate = new Date()
     if (parsed.dataNascimento instanceof Timestamp) {
@@ -35,8 +34,8 @@ class CandidateAdapter implements DatabaseAdapter<CandidatoDocument, Candidato, 
 
     return {
       id: parsed.id,
-      nome: parsed.nome ?? 'Nome não informado',
-      partido: parsed.partido ?? 'Partido não informado',
+      nome: parsed.nome,
+      partido: parsed.partido,
       federacao: parsed.federacao ?? undefined,
       dataNascimento: dataNascimentoDate,
     }
