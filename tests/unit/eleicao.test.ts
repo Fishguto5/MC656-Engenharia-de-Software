@@ -1,5 +1,5 @@
+import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import {
-  type Candidato,
   type VotacaoPresidente,
   type ConsultaPublica,
   precisaSegundoTurno,
@@ -33,6 +33,7 @@ describe('precisaSegundoTurno', () => {
       nome: '',
       partido: '',
       votos: 30,
+      dataNascimento: new Date(),
     }]
 
     const res = precisaSegundoTurno(votacao)
@@ -41,9 +42,9 @@ describe('precisaSegundoTurno', () => {
 
   it('votacao com tres candidatos sem segundo turno', () => {
     votacao.candidatos = [
-      { id: '', nome: '', partido: '', votos: 30 },
-      { id: '', nome: '', partido: '', votos: 19 },
-      { id: '', nome: '', partido: '', votos: 51 },
+      { id: '', nome: '', partido: '', votos: 30, dataNascimento: new Date() },
+      { id: '', nome: '', partido: '', votos: 19, dataNascimento: new Date() },
+      { id: '', nome: '', partido: '', votos: 51, dataNascimento: new Date() },
     ]
 
     const res = precisaSegundoTurno(votacao)
@@ -52,9 +53,9 @@ describe('precisaSegundoTurno', () => {
 
   it('votacao com tres candidatos com segundo turno', () => {
     votacao.candidatos = [
-      { id: '', nome: '', partido: '', votos: 30 },
-      { id: '', nome: '', partido: '', votos: 20 },
-      { id: '', nome: '', partido: '', votos: 50 },
+      { id: '', nome: '', partido: '', votos: 30, dataNascimento: new Date() },
+      { id: '', nome: '', partido: '', votos: 20, dataNascimento: new Date() },
+      { id: '', nome: '', partido: '', votos: 50, dataNascimento: new Date() },
     ]
 
     const res = precisaSegundoTurno(votacao)
@@ -86,6 +87,7 @@ describe('getCandidatosSegundoTurno', () => {
       nome: '',
       partido: '',
       votos: 30,
+      dataNascimento: new Date(),
     }]
 
     const res = getCandidatosSegundoTurno(votacao)
@@ -94,9 +96,9 @@ describe('getCandidatosSegundoTurno', () => {
 
   it('votacao com tres candidatos sem segundo turno', () => {
     votacao.candidatos = [
-      { id: '', nome: '', partido: '', votos: 30 },
-      { id: '', nome: '', partido: '', votos: 19 },
-      { id: '', nome: '', partido: '', votos: 51 },
+      { id: '', nome: '', partido: '', votos: 30, dataNascimento: new Date() },
+      { id: '', nome: '', partido: '', votos: 19, dataNascimento: new Date() },
+      { id: '', nome: '', partido: '', votos: 51, dataNascimento: new Date() },
     ]
 
     const res = getCandidatosSegundoTurno(votacao)
@@ -104,9 +106,9 @@ describe('getCandidatosSegundoTurno', () => {
   })
 
   it('votacao com tres candidatos com segundo turno', () => {
-    const c1: Candidato = { id: '01', nome: '', partido: '', votos: 30 }
-    const c2: Candidato = { id: '02', nome: '', partido: '', votos: 20 }
-    const c3: Candidato = { id: '03', nome: '', partido: '', votos: 50 }
+    const c1: VotosCandidato = { id: '01', nome: '', partido: '', votos: 30, dataNascimento: new Date() }
+    const c2: VotosCandidato = { id: '02', nome: '', partido: '', votos: 20, dataNascimento: new Date() }
+    const c3: VotosCandidato = { id: '03', nome: '', partido: '', votos: 50, dataNascimento: new Date() }
 
     votacao.candidatos = [c1, c2, c3]
 
@@ -142,9 +144,9 @@ describe('resultadoConsultaPublica', () => {
 })
 
 describe('getResultadoPrimeiroTurno', () => {
-  const candidatoA: Candidato = { id: '1', nome: 'A', partido: 'A', votos: 0 }
-  const candidatoB: Candidato = { id: '2', nome: 'B', partido: 'B', votos: 0 }
-  const candidatoC: Candidato = { id: '3', nome: 'C', partido: 'C', votos: 0 }
+  const candidatoA: VotosCandidato = { id: '1', nome: 'A', partido: 'A', votos: 0, dataNascimento: new Date() }
+  const candidatoB: VotosCandidato = { id: '2', nome: 'B', partido: 'B', votos: 0, dataNascimento: new Date() }
+  const candidatoC: VotosCandidato = { id: '3', nome: 'C', partido: 'C', votos: 0, dataNascimento: new Date() }
 
   const votacaoBase: Omit<VotacaoPresidente, 'candidatos'> = {
     id: 'votacao-2026',

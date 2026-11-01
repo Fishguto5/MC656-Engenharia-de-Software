@@ -10,9 +10,10 @@ import {
   updateDoc,
 } from 'firebase/firestore'
 
-import { Election, ElectionStatus } from './Election'
 import { fromFirebase, toFirebase } from './FirebaseElectionAdapter'
 import { firestore } from './firebase'
+import { ElectionStatus } from '@/interfaces/firebaseInterfaces'
+import { BaseElection } from '@/interfaces/eleicaoInterfaces'
 
 // Types
 export interface CreateElectionInput {
@@ -39,7 +40,7 @@ const ELECTIONS_COLLECTION = 'elections'
 // ==========================================
 
 export class FirebaseElectionRepository {
-  async findAll(): Promise<Election[]> {
+  async findAll(): Promise<BaseElection[]> {
     const electionsQuery = query(
       collection(firestore, ELECTIONS_COLLECTION),
       orderBy('starts_at', 'desc'),
@@ -52,7 +53,7 @@ export class FirebaseElectionRepository {
     )
   }
 
-  async findById(id: string): Promise<Election | null> {
+  async findById(id: string): Promise<BaseElection | null> {
     const electionReference = doc(firestore, ELECTIONS_COLLECTION, id)
     const snapshot = await getDoc(electionReference)
 
@@ -63,10 +64,10 @@ export class FirebaseElectionRepository {
     return fromFirebase(snapshot.id, snapshot.data())
   }
 
-  async create(input: CreateElectionInput): Promise<Election> {
+  async create(input: CreateElectionInput): Promise<BaseElection> {
     const now = new Date()
 
-    const electionToCreate: Election = {
+    const electionToCreate: BaseElection = {
       id: '',
       title: input.title,
       description: input.description ?? '',
@@ -95,14 +96,14 @@ export class FirebaseElectionRepository {
     return createdElection
   }
 
-  async update(id: string, input: UpdateElectionInput): Promise<Election> {
+  async update(id: string, input: UpdateElectionInput): Promise<BaseElection> {
     const currentElection = await this.findById(id)
 
     if (!currentElection) {
       throw new Error(`Election "${id}" was not found.`)
     }
 
-    const updatedElection: Election = {
+    const updatedElection: BaseElection = {
       id,
       title: input.title ?? currentElection.title,
       description: input.description ?? currentElection.description,

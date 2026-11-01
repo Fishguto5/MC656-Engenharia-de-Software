@@ -1,18 +1,9 @@
-export type Candidato = {
-  id: string
-  nome: string
-  partido: string
-  votos: number
-  // Usada apenas nos critérios de desempate por idade ("mais idoso").
-  dataNascimento?: Date
-  // Federação partidária do candidato. Nas eleições proporcionais a federação
-  // atua como um único partido (Lei 9.504/97, art. 6º-A).
-  federacao?: string
-}
-
 // Soma dos votos nominais. Votos em branco e nulos não são computados
+
+import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
+
 // (CF, art. 77, § 2º; Lei 9.504/97, art. 2º).
-export function somarVotos(candidatos: Candidato[]): number {
+export function somarVotos(candidatos: VotosCandidato[]): number {
   return candidatos.reduce((acc, c) => acc + c.votos, 0)
 }
 
@@ -25,10 +16,10 @@ export function validarVotos(valores: number[]): void {
   }
 }
 
-// Maior votação primeiro. Em caso de empate, prevalece o candidato mais idoso
+// Maior votação primeiro. Em caso de empate, prevalece o VotosCandidato mais idoso
 // (CF, art. 77, § 5º; Lei 9.504/97, art. 2º, § 3º; Código Eleitoral, art. 110).
 // Sem data de nascimento informada, a ordem original é mantida (sort estável).
-export function compararPorVotacao(a: Candidato, b: Candidato): number {
+export function compararPorVotacao(a: VotosCandidato, b: VotosCandidato): number {
   if (a.votos !== b.votos) return b.votos - a.votos
 
   if (a.dataNascimento && b.dataNascimento) {
@@ -38,16 +29,16 @@ export function compararPorVotacao(a: Candidato, b: Candidato): number {
   return 0
 }
 
-export function ordenarPorVotacao(candidatos: Candidato[]): Candidato[] {
+export function ordenarPorVotacao(candidatos: VotosCandidato[]): VotosCandidato[] {
   return [...candidatos].sort(compararPorVotacao)
 }
 
 // Percentuais do quociente eleitoral (QE) exigidos pelo Código Eleitoral.
-// Art. 108: votação nominal mínima do candidato para ser eleito pelo quociente.
+// Art. 108: votação nominal mínima do VotosCandidato para ser eleito pelo quociente.
 export const VOTACAO_MINIMA_CANDIDATO = 10
 // Art. 109, § 2º: votação mínima do partido/federação para disputar as sobras...
 export const VOTACAO_MINIMA_AGREMIACAO_SOBRAS = 80
-// ...e do candidato que vai ocupar a vaga (só na primeira fase das sobras).
+// ...e do VotosCandidato que vai ocupar a vaga (só na primeira fase das sobras).
 export const VOTACAO_MINIMA_CANDIDATO_SOBRAS = 20
 
 // Vagas de Deputado Federal por circunscrição nas Eleições 2026 (LC 78/1993).
@@ -85,9 +76,9 @@ export const VAGAS_DEPUTADO_FEDERAL = {
 
 export type UF = keyof typeof VAGAS_DEPUTADO_FEDERAL
 
-// Nome da agremiação (partido ou federação) pela qual o candidato concorre.
-export function agremiacaoDe(candidato: Candidato): string {
-  return candidato.federacao ?? candidato.partido
+// Nome da agremiação (partido ou federação) pela qual o VotosCandidato concorre.
+export function agremiacaoDe(VotosCandidato: VotosCandidato): string {
+  return VotosCandidato.federacao ?? VotosCandidato.partido
 }
 
 // Votos de legenda por agremiação, já validados por `criarVotosLegenda`.
@@ -123,7 +114,7 @@ export type VotacaoDeputado = {
   data: Date
   vagas: number
   agremiacoes: readonly string[]
-  candidatos: Candidato[]
+  candidatos: VotosCandidato[]
   votosLegenda: VotosLegenda
   votosBrancos: number
   votosNulos: number
@@ -139,7 +130,7 @@ export type ResultadoAgremiacao = {
   vagasQuociente: number
   // Cadeiras conquistadas na distribuição das sobras (maiores médias).
   vagasSobras: number
-  eleitos: Candidato[]
+  eleitos: VotosCandidato[]
 }
 
 export type ResultadoDeputado = {
@@ -147,7 +138,7 @@ export type ResultadoDeputado = {
   quocienteEleitoral: number
   agremiacoes: ResultadoAgremiacao[]
   // Todos os eleitos, em ordem decrescente de votação nominal.
-  eleitos: Candidato[]
+  eleitos: VotosCandidato[]
 }
 
 type Agremiacao = {
@@ -160,8 +151,8 @@ type Agremiacao = {
   // denominador (+1) da média (Res.-TSE 23.677/2021, art. 11, § 5º).
   vagasObtidas: number
   vagasSobras: number
-  candidatos: Candidato[]
-  eleitos: Candidato[]
+  candidatos: VotosCandidato[]
+  eleitos: VotosCandidato[]
 }
 
 // Art. 106: quociente eleitoral = votos válidos / vagas. A fração igual ou
@@ -196,9 +187,9 @@ function validarVotacaoDeputado(votacao: VotacaoDeputado): void {
 
   const validas = new Set(votacao.agremiacoes)
 
-  for (const candidato of votacao.candidatos) {
-    if (!validas.has(agremiacaoDe(candidato))) {
-      throw new RangeError(`Candidato ${candidato.id} de agremiação desconhecida: ${agremiacaoDe(candidato)}`)
+  for (const VotosCandidato of votacao.candidatos) {
+    if (!validas.has(agremiacaoDe(VotosCandidato))) {
+      throw new RangeError(`VotosCandidato ${VotosCandidato.id} de agremiação desconhecida: ${agremiacaoDe(VotosCandidato)}`)
     }
   }
 
@@ -232,8 +223,8 @@ function agrupar(votacao: VotacaoDeputado): Agremiacao[] {
     }]),
   )
 
-  for (const candidato of votacao.candidatos) {
-    mapa.get(agremiacaoDe(candidato))!.candidatos.push(candidato)
+  for (const VotosCandidato of votacao.candidatos) {
+    mapa.get(agremiacaoDe(VotosCandidato))!.candidatos.push(VotosCandidato)
   }
 
   const agremiacoes = [...mapa.values()]
@@ -249,7 +240,7 @@ function agrupar(votacao: VotacaoDeputado): Agremiacao[] {
 
 // Como os candidatos de cada agremiação já estão ordenados por votação, o
 // próximo a ser eleito é sempre o primeiro que ainda não foi eleito.
-function proximoCandidato(agremiacao: Agremiacao): Candidato | undefined {
+function proximoCandidato(agremiacao: Agremiacao): VotosCandidato | undefined {
   return agremiacao.candidatos[agremiacao.eleitos.length]
 }
 
@@ -293,7 +284,7 @@ function podeDisputarSobrasSemClausula(agremiacao: Agremiacao): boolean {
 // Maior média primeiro: votos válidos / (cadeiras obtidas + 1). A comparação
 // usa multiplicação cruzada para não depender de ponto flutuante.
 // Empate de médias: vence quem tem mais votos válidos (Res.-TSE 23.677/2021,
-// art. 11, § 6º) e, persistindo, quem tem o candidato mais votado disputando
+// art. 11, § 6º) e, persistindo, quem tem o VotosCandidato mais votado disputando
 // a vaga (§ 7º).
 function compararPorMedia(a: Agremiacao, b: Agremiacao): number {
   const mediaA = a.votosValidos * (b.vagasObtidas + 1)
@@ -308,7 +299,7 @@ function compararPorMedia(a: Agremiacao, b: Agremiacao): number {
 }
 
 // Sobras (art. 109). Cada cadeira restante vai para a maior média entre as
-// agremiações com 80% do QE e candidato com 20% do QE. Quando nenhuma atende
+// agremiações com 80% do QE e VotosCandidato com 20% do QE. Quando nenhuma atende
 // às duas exigências, todas as agremiações disputam por maior média, sem
 // cláusula (STF, ADI 7.228, 7.263 e 7.325, valendo desde 2024). Isso também
 // vale quando nenhum partido atinge o quociente eleitoral.
@@ -380,6 +371,6 @@ export function apurarDeputados(votacao: VotacaoDeputado): ResultadoDeputado {
   }
 }
 
-export function getDeputadosEleitos(votacao: VotacaoDeputado): Candidato[] {
+export function getDeputadosEleitos(votacao: VotacaoDeputado): VotosCandidato[] {
   return apurarDeputados(votacao).eleitos
 }

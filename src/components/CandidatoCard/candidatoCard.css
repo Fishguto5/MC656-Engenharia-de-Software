@@ -1,0 +1,61 @@
+article {
+  border: solid gray;
+  width: 100%;
+  padding: 10px 16px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+article h2 {
+  color: #080808;
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+article .party-federation {
+  display: flex;
+  gap: 8px;
+}
+
+/*ICON CONTAINER*/
+article .icon-container {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+article .card-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: solid 2px black;
+  border-radius: 5px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+article .card-button.edit:hover {
+  background-color: #d97706;
+}
+article .card-button.trash:hover {
+  background-color: #dc2626;
+}
+
+@media screen and (min-width: 768px) {
+  article .icon-container {
+    flex-direction: column;
+  }
+
+  article .card-button {
+    width: 30px;
+    height: 30px;
+  }
+}

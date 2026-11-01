@@ -1,5 +1,5 @@
+import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import {
-  type Candidato,
   type VotacaoDeputado,
   agremiacaoDe,
   apurarDeputados,
@@ -11,15 +11,15 @@ import {
 } from '@/lib/deputado'
 import { describe, expect, it } from 'vitest'
 
-function criarCandidato(id: string, partido: string, votos: number, extra: Partial<Candidato> = {}): Candidato {
-  return { id, nome: `Candidato ${id}`, partido, votos, ...extra }
+function criarCandidato(id: string, partido: string, votos: number, extra: Partial<VotosCandidato> = {}): VotosCandidato {
+  return { id, nome: `Candidato ${id}`, partido, votos, ...extra, dataNascimento: extra.dataNascimento ?? new Date() }
 }
 
 // Por padrao, o conjunto de agremiacoes validas e derivado dos candidatos e das
 // chaves de legenda. Passe `agremiacoes` para forcar um conjunto especifico.
 function criarVotacao(
   vagas: number,
-  candidatos: Candidato[],
+  candidatos: VotosCandidato[],
   votosLegenda: Record<string, number> = {},
   votosBrancos = 0,
   votosNulos = 0,
@@ -37,7 +37,7 @@ function criarVotacao(
   }
 }
 
-function ids(candidatos: Candidato[]): string[] {
+function ids(candidatos: VotosCandidato[]): string[] {
   return candidatos.map(c => c.id)
 }
 

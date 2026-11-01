@@ -1,4 +1,4 @@
-import { Election } from '@/lib/Election'
+import { BaseElection } from '@/interfaces/eleicaoInterfaces'
 import { fromFirebase, toFirebase } from '@/lib/FirebaseElectionAdapter'
 import { Timestamp } from 'firebase/firestore'
 import { describe, expect, it } from 'vitest'
@@ -107,7 +107,7 @@ describe('FirebaseElectionAdapter', () => {
     const createdAt = new Date('2026-10-25T12:00:00.000Z')
     const updatedAt = new Date('2026-10-26T12:00:00.000Z')
 
-    const election: Election = {
+    const election: BaseElection = {
       id: 'election-1',
       title: 'Eleição de teste',
       description: 'Descrição',

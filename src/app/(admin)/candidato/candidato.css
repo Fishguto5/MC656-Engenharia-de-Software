@@ -1,0 +1,88 @@
+main.signup-candidate-page {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 32px 20px;
+}
+
+main.center-page {
+  justify-content: center;
+}
+
+.signup-candidate-page h1 {
+  color: #080808;
+  font-size: clamp(1.75rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 72px;
+  text-align: center;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  width: min(100%, 768px);
+  height: 80px;
+}
+
+/* Botão base */
+header .adicionar-candidato {
+  background-color: #333333;
+  border: 0;
+  border-radius: 0;
+  color: #ffffff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+
+  font:
+    700 0.9rem Arial,
+    Helvetica,
+    sans-serif;
+  height: 27px;
+  margin-top: 10px;
+  padding: 0;
+  width: 100%;
+
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+header .adicionar-candidato:hover {
+  background-color: #1f1f1f;
+}
+
+header .adicionar-candidato:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
+/* Especificação para input file e label*/
+header .adicionar-candidato.disabled-label {
+  background-color: #504f4f !important;
+  cursor: not-allowed !important;
+  opacity: 0.8;
+  pointer-events: none; /* Impede cliques */
+}
+
+section.candidate-list {
+  width: min(100%, 768px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+section.candidate-list h1 {
+  color: #080808;
+  font-size: clamp(1.75rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 48px;
+  text-align: center;
+}
