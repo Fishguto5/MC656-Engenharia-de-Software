@@ -118,12 +118,12 @@ export default function CandidatoClientView({ initialCandidatos }: { initialCand
   return (
     <main className="signup-candidate-page">
       <header>
-        <Link href="/candidato/cadastrar" className="adicionar-candidato">Novo Candidato</Link>
+        <Link href="/candidato/cadastrar" className="primary-btn adicionar-candidato">Novo Candidato</Link>
 
         <div className="w-full">
           <label
             htmlFor="csvFileInput"
-            className={`adicionar-candidato ${isUploading ? 'disabled-label' : ''}`}
+            className={`primary-btn adicionar-candidato ${isUploading ? 'disabled-label' : ''}`}
             title="nome|partido|dataNascimento|federacao (opicional)"
           >
             Importar Candidato

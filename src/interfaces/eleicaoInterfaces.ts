@@ -14,6 +14,7 @@ export interface Candidato {
 
 export interface VotosCandidato extends Candidato {
   votos: number
+  numero: number
 }
 
 // Eleição

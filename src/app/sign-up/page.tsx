@@ -99,7 +99,7 @@ export default function SignUpPage() {
             />
           </div>
 
-          <button type="submit">Acessar</button>
+          <button type="submit" className='primary-btn'>Acessar</button>
 
           {message && (
             <p

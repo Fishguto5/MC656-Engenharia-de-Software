@@ -31,39 +31,12 @@ header {
 
 /* Botão base */
 header .adicionar-candidato {
-  background-color: #333333;
-  border: 0;
-  border-radius: 0;
-  color: #ffffff;
-
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-
-  font:
-    700 0.9rem Arial,
-    Helvetica,
-    sans-serif;
-  height: 27px;
-  margin-top: 10px;
-  padding: 0;
-  width: 100%;
-
-  cursor: pointer;
-  transition: background-color 120ms ease;
 }
 
-header .adicionar-candidato:hover {
-  background-color: #1f1f1f;
-}
-
-header .adicionar-candidato:focus-visible {
-  outline: 2px solid #111111;
-  outline-offset: 2px;
-}
-
-/* Especificação para input file e label*/
 header .adicionar-candidato.disabled-label {
   background-color: #504f4f !important;
   cursor: not-allowed !important;

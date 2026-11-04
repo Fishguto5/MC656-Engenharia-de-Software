@@ -2,6 +2,7 @@ import { Timestamp } from '@firebase/firestore'
 
 // Interface Base da eleição
 export type ElectionStatus = 'draft' | 'scheduled' | 'open' | 'closed' | 'cancelled'
+export type ElectionType = 'president' | 'deputy' | 'public-consultation'
 
 export interface BaseElectionDocument {
   id: string

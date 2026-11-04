@@ -63,7 +63,7 @@ export default function CandidatoForm(props: CandidatoFormProps) {
         />
       </div>
 
-      <button type="submit">Salvar</button>
+      <button type="submit" className='primary-btn'>Salvar</button>
     </form>
   )
 }
