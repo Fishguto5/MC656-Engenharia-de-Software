@@ -12,7 +12,7 @@ import {
 import { describe, expect, it } from 'vitest'
 
 function criarCandidato(id: string, partido: string, votos: number, extra: Partial<VotosCandidato> = {}): VotosCandidato {
-  return { id, nome: `Candidato ${id}`, partido, votos, ...extra, dataNascimento: extra.dataNascimento ?? new Date() }
+  return { id, nome: `Candidato ${id}`, partido, votos, ...extra, dataNascimento: extra.dataNascimento ?? new Date(), numero: 0 }
 }
 
 // Por padrao, o conjunto de agremiacoes validas e derivado dos candidatos e das

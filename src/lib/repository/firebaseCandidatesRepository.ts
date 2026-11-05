@@ -2,6 +2,8 @@ import { Candidato } from '@/interfaces/eleicaoInterfaces'
 import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateDoc, getDoc, addDoc, QueryDocumentSnapshot, DocumentData, writeBatch, Timestamp } from 'firebase/firestore'
 import { candidateAdapter, CandidatoRawDocument } from '../adapter/firebaseCandidateAdapter'
 import { firestore } from '../firebase'
+import { getDateYearsAgo } from '../date/date'
+import { MINIMUM_DEPUTY_AGE } from './firebaseElectionDeputyRepository'
 
 export const CANDIDATES_COLLECTION = 'candidatos'
 
@@ -9,16 +11,9 @@ export const CANDIDATES_COLLECTION = 'candidatos'
  * Idade mínima para Presidente = 35 anos
  * A lógica de eleição verifica a idade para presidente
 */
-export const MINIMUM_AGE = 21
-export const getMaxDate = () => {
-  const date = new Date()
-  date.setFullYear(date.getFullYear() - MINIMUM_AGE)
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
+export const MINIMUM_AGE = MINIMUM_DEPUTY_AGE
+export const maxCandidateDoB = () => {
+  return getDateYearsAgo(MINIMUM_AGE)
 }
 
 class FirebaseCandidatesRepository {
@@ -44,7 +39,7 @@ class FirebaseCandidatesRepository {
     // Remove horas/minutos para comparar apenas o dia
     const dateDoB = DoB.toDate()
     const dateCandidate = new Date(dateDoB.getFullYear(), dateDoB.getMonth(), dateDoB.getDate())
-    const maxDate = new Date(`${getMaxDate()}T00:00:00`)
+    const maxDate = new Date(`${maxCandidateDoB()}T00:00:00`)
 
     return dateCandidate <= maxDate
   }
