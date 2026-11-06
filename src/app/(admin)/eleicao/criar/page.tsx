@@ -1,6 +1,5 @@
 'use client'
 
-import '../votacao.css'
 import EleicaoForm from '@/components/EleicaoForm/EleicaoForm'
 import { EleicaoProvider } from '@/components/EleicaoForm/EleicaoContext'
 import { firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository'
