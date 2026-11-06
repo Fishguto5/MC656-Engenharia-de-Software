@@ -22,10 +22,6 @@ const PublicConsultationRawSchema = z.object({
 
 export type PublicConsultationRawDocument = z.infer<typeof PublicConsultationRawSchema>
 
-// interface PublicConsultationToDBOptions {
-//   isActive: boolean
-// }
-
 class PublicConsultationAdapter implements DatabaseAdapter<ConsultaPublicaDocument, ConsultaPublica, void, PublicConsultationRawDocument> {
   fromDB(raw: PublicConsultationRawDocument): ConsultaPublica {
     const parsed = PublicConsultationRawSchema.parse(raw) // Se faltar algum obrigatório, o Zod lança um erro

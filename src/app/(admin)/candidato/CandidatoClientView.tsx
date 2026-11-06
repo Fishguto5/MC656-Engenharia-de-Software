@@ -86,7 +86,7 @@ export default function CandidatoClientView({ initialCandidatos }: { initialCand
           }
 
           // Salva no Firebase e recebe os candidatos já com os IDs reais gerados
-          const novosCandidatos = await firebaseCandidate.createBatch(candidatosProcessados)
+          const novosCandidatos = await firebaseCandidate.saveBatch(candidatosProcessados)
 
           // Atualiza o estado local
           setCandidatos(prev => [...prev, ...novosCandidatos].sort((a, b) => a.partido.localeCompare(b.partido)))

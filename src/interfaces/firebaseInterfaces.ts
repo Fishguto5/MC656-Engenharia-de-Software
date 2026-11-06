@@ -27,7 +27,7 @@ export type CandidatoDocument = {
   federacao?: string
 }
 
-// Subcoleção de Votos para Candidato
+// Subcoleção 'eleicoes/[eleicaoId]/candidatos' 
 export type VotosCandidatoDocument = {
   eleicaoId: string
   candidatoId: string
@@ -35,7 +35,7 @@ export type VotosCandidatoDocument = {
   numero: number
 }
 
-// 2. Coleção 'eleicoesDeputados'
+// 2. Coleção 'eleicoes'
 export interface EleicaoDeputadoDocument extends BaseElectionDocument {
   type: 'deputy'
   uf: UF
@@ -46,7 +46,7 @@ export interface EleicaoDeputadoDocument extends BaseElectionDocument {
   votosNulos: number
 }
 
-// Subcoleção 'resultados/consolidado' em 'eleicoesDeputados'
+// Subcoleção 'resultados/consolidado' em 'eleicoes'
 export interface ResultadoDeputadoConsolidadoDocument {
   votosValidos: number
   quocienteEleitoral: number
@@ -64,16 +64,15 @@ export interface ResultadoDeputadoConsolidadoDocument {
   eleitosIds: string[] // Lista apenas com os IDs dos candidatos eleitos
 }
 
-// 3. Coleção 'eleicoesPresidente'
+// 3. Coleção 'eleicoes'
 export interface EleicaoPresidenteDocument extends BaseElectionDocument {
   type: 'president'
-  candidatosIds: string[]
   turno: number
   votosBrancos: number
   votosNulos: number
 }
 
-// Subcoleção 'resultados/consolidado' em 'eleicoesPresidente'
+// Subcoleção 'resultados/consolidado' em 'eleicoes'
 export interface ResultadoPresidenteConsolidadoDocument {
   votosValidos: number
   precisaSegundoTurno: boolean
@@ -81,7 +80,7 @@ export interface ResultadoPresidenteConsolidadoDocument {
   candidatosVotacaoIds: string[] // IDs dos candidatos classificados
 }
 
-// 4. Coleção 'consultasPublicas'
+// 4. Coleção 'eleicoes'
 export type LocalConsulta = 'Brasil' | UF // Por enquanto, apenas consultas nacionais ou estaduais
 
 export interface ConsultaPublicaDocument extends BaseElectionDocument {

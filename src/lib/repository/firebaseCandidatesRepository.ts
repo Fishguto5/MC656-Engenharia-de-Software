@@ -152,7 +152,7 @@ class FirebaseCandidatesRepository {
     }
   }
 
-  async createBatch(domain: Candidato[]): Promise<Candidato[]> {
+  async saveBatch(domain: Candidato[]): Promise<Candidato[]> {
     const batch = writeBatch(firestore)
     const collectionRef = collection(firestore, CANDIDATES_COLLECTION)
 

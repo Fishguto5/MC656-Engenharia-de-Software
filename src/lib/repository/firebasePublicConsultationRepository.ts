@@ -4,26 +4,16 @@ import { firestore } from '../firebase'
 import { publicConsultationAdapter, PublicConsultationRawDocument } from '../adapter/firebasePublicConsultationAdapter'
 import { ConsultaPublicaDocument } from '@/interfaces/firebaseInterfaces'
 import { omitId } from '../utils/omitId'
+import { isValidTimeFrame } from '../utils/date'
 
-export const PUBLIC_CONSULTATION_COLLECTION = 'eleicoes'
+export const ELECTION_COLLECTION = 'eleicoes'
 
 class FirebasePublicConsultationRepository {
-  private isValidTimeFrame(start: Timestamp, end: Timestamp): boolean {
-    const dateStart = start.toDate()
-    dateStart.setHours(0, 0, 0, 0)
-
-    const dateEnd = end.toDate()
-    dateEnd.setHours(0, 0, 0, 0)
-
-    // Garante que o dia de início é anterior ou igual ao dia de término
-    return dateStart <= dateEnd
-  }
-
   // async findAll(): Promise<ConsultaPublica[]> {}
 
   async findById(id: string): Promise<ConsultaPublica | null> {
-    const candidateRef = doc(firestore, PUBLIC_CONSULTATION_COLLECTION, id)
-    const snapshot = await getDoc(candidateRef)
+    const publicConsultationRef = doc(firestore, ELECTION_COLLECTION, id)
+    const snapshot = await getDoc(publicConsultationRef)
 
     if (!snapshot.exists()) {
       return null
@@ -47,7 +37,7 @@ class FirebasePublicConsultationRepository {
     const dbData = publicConsultationAdapter.toDB(domain)
 
     // Verificar data de inicio e fim
-    if (!this.isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
+    if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
       return
     }
 
@@ -59,7 +49,7 @@ class FirebasePublicConsultationRepository {
     }
 
     try {
-      await addDoc(collection(firestore, PUBLIC_CONSULTATION_COLLECTION), data)
+      await addDoc(collection(firestore, ELECTION_COLLECTION), data)
     }
     catch (error) {
       console.error('Erro ao criar consulta pública:', error)
@@ -71,7 +61,7 @@ class FirebasePublicConsultationRepository {
     const dbData = publicConsultationAdapter.toDB(domain)
 
     // Verificar Idade
-    if (!this.isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
+    if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
       return
     }
 
@@ -80,7 +70,7 @@ class FirebasePublicConsultationRepository {
       updatedAt: serverTimestamp() as unknown as Timestamp,
     }
 
-    const publicConsultationRef = doc(firestore, PUBLIC_CONSULTATION_COLLECTION, domain.id)
+    const publicConsultationRef = doc(firestore, ELECTION_COLLECTION, domain.id)
 
     try {
       await updateDoc(publicConsultationRef, data)

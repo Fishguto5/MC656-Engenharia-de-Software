@@ -262,7 +262,7 @@ describe('FirebaseCandidateRepository', () => {
         },
       ]
 
-      const resultado = await firebaseCandidate.createBatch(listaCandidatos)
+      const resultado = await firebaseCandidate.saveBatch(listaCandidatos)
 
       expect(resultado[0].id).toBe('auto-generated-id-123')
 

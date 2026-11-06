@@ -1,10 +1,11 @@
 import { createContext, useContext, useState } from 'react'
 import { ElectionStatus, ElectionType, LocalConsulta } from '@/interfaces/firebaseInterfaces'
-import { Candidato, ConsultaPublica, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
+import { Candidato, ConsultaPublica, EleicaoPresidente, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { InputDateToDate } from '@/lib/utils/date'
 import { firebasePublicConsultation } from '@/lib/repository/firebasePublicConsultationRepository'
 import { useRouter } from 'next/navigation'
 import { UF } from '@/lib/deputado'
+import { firebasePresident } from '@/lib/repository/firebaseElectionPresidentRepository'
 
 export interface FormElectionData {
   title: string
@@ -142,12 +143,72 @@ export function EleicaoProvider({
     }
   }
 
+  async function handleSubmitPresident() {
+    // Validar datas
+    const validDateStart = InputDateToDate(formData.startsAt)
+    if (!validDateStart) {
+      alert('Por favor, insira uma data de início (formato YYYY-MM-DD).')
+      return
+    }
+    const validDateEnd = InputDateToDate(formData.endsAt)
+    if (!validDateEnd) {
+      alert('Por favor, insira uma data de finalização (formato YYYY-MM-DD).')
+      return
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const status = today < validDateStart ? 'scheduled' as ElectionStatus : 'open' as ElectionStatus
+
+    const sanitizedCandidates: VotosCandidato[] = formData.candidates.map(candidate => ({
+      ...candidate,
+      dataNascimento: candidate.dataNascimento instanceof Date && !isNaN(candidate.dataNascimento.getTime())
+        ? candidate.dataNascimento
+        : new Date(candidate.dataNascimento), // Converte string YYYY-MM-DD para Date
+    }))
+
+    // Enviar para o DB
+    const submitData = {
+      id: '',
+      title: formData.title,
+      description: formData.description,
+      startsAt: validDateStart,
+      endsAt: validDateEnd,
+      type: 'president' as ElectionType,
+      status: status,
+      createdAt: today,
+      updatedAt: today,
+      candidatos: sanitizedCandidates,
+      turno: 1,
+      votosBrancos: 0,
+      votosNulos: 0,
+
+    } as EleicaoPresidente
+
+    try {
+      await firebasePresident.create(submitData)
+      cleanForms()
+      router.refresh()
+    }
+    catch (error) {
+      console.error('Erro ao salvar eleição para presidente:', error)
+      alert('Ocorreu um erro ao salvar os dados. Tente novamente.')
+    }
+  }
+
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
 
     switch (electionType) {
       case 'public-consultation':
         handleSubmitPublicConsultation()
+        console.log('Dados Enviados:', { electionType, ...formData })
+        alert('Formulário enviado com sucesso!')
+        break
+
+      case 'president':
+        handleSubmitPresident()
         console.log('Dados Enviados:', { electionType, ...formData })
         alert('Formulário enviado com sucesso!')
         break
