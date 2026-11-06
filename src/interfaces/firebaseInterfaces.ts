@@ -27,7 +27,7 @@ export type CandidatoDocument = {
   federacao?: string
 }
 
-// Subcoleção 'eleicoes/[eleicaoId]/candidatos' 
+// Subcoleção 'eleicoes/[eleicaoId]/candidatos'
 export type VotosCandidatoDocument = {
   eleicaoId: string
   candidatoId: string
@@ -39,7 +39,6 @@ export type VotosCandidatoDocument = {
 export interface EleicaoDeputadoDocument extends BaseElectionDocument {
   type: 'deputy'
   uf: UF
-  candidatosIds: string[] // Lista de IDs de candidatos concorrendo nesta uf
   agremiacoes: string[] // Lista de partidos/federações válidos
   votosLegenda: Record<string, number> // {"NomeAgremiacao": quantidadeVotos}
   votosBrancos: number

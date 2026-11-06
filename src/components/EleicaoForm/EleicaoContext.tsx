@@ -1,11 +1,12 @@
 import { createContext, useContext, useState } from 'react'
 import { ElectionStatus, ElectionType, LocalConsulta } from '@/interfaces/firebaseInterfaces'
-import { Candidato, ConsultaPublica, EleicaoPresidente, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
-import { InputDateToDate } from '@/lib/utils/date'
+import { Candidato, ConsultaPublica, EleicaoDeputado, EleicaoPresidente, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
+import { InputDateToDate, RawDocumentTimeToDate } from '@/lib/utils/date'
 import { firebasePublicConsultation } from '@/lib/repository/firebasePublicConsultationRepository'
 import { useRouter } from 'next/navigation'
 import { UF } from '@/lib/deputado'
 import { firebasePresident } from '@/lib/repository/firebaseElectionPresidentRepository'
+import { firebaseDeputy } from '@/lib/repository/firebaseElectionDeputyRepository'
 
 export interface FormElectionData {
   title: string
@@ -144,28 +145,34 @@ export function EleicaoProvider({
   }
 
   async function handleSubmitPresident() {
-    // Validar datas
+    // 1. Validação de datas
     const validDateStart = InputDateToDate(formData.startsAt)
     if (!validDateStart) {
-      alert('Por favor, insira uma data de início (formato YYYY-MM-DD).')
+      alert('Por favor, insira uma data de início válida (formato YYYY-MM-DD).')
       return
     }
     const validDateEnd = InputDateToDate(formData.endsAt)
     if (!validDateEnd) {
-      alert('Por favor, insira uma data de finalização (formato YYYY-MM-DD).')
+      alert('Por favor, insira uma data de finalização válida (formato YYYY-MM-DD).')
       return
     }
 
+    if (validDateEnd < validDateStart) {
+      alert('A data de término deve ser posterior à data de início.')
+      return
+    }
+
+    // 2. Determinar status
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const status: ElectionStatus = today < validDateStart ? 'scheduled' : 'open'
 
-    const status = today < validDateStart ? 'scheduled' as ElectionStatus : 'open' as ElectionStatus
-
-    const sanitizedCandidates: VotosCandidato[] = formData.candidates.map(candidate => ({
+    // 3. Sanitizar candidatos e extrair Agremiações
+    const sanitizedCandidates: VotosCandidato[] = (formData.candidates || []).map(candidate => ({
       ...candidate,
-      dataNascimento: candidate.dataNascimento instanceof Date && !isNaN(candidate.dataNascimento.getTime())
-        ? candidate.dataNascimento
-        : new Date(candidate.dataNascimento), // Converte string YYYY-MM-DD para Date
+      dataNascimento: RawDocumentTimeToDate(candidate.dataNascimento),
+      votos: candidate.votos ?? 0,
+      numero: candidate.numero,
     }))
 
     // Enviar para o DB
@@ -197,6 +204,82 @@ export function EleicaoProvider({
     }
   }
 
+  async function handleSubmitDeputy() {
+    // 1. Validação de datas
+    const validDateStart = InputDateToDate(formData.startsAt)
+    if (!validDateStart) {
+      alert('Por favor, insira uma data de início válida (formato YYYY-MM-DD).')
+      return
+    }
+    const validDateEnd = InputDateToDate(formData.endsAt)
+    if (!validDateEnd) {
+      alert('Por favor, insira uma data de finalização válida (formato YYYY-MM-DD).')
+      return
+    }
+
+    if (validDateEnd < validDateStart) {
+      alert('A data de término deve ser posterior à data de início.')
+      return
+    }
+
+    // 2. Determinar status
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const status: ElectionStatus = today < validDateStart ? 'scheduled' : 'open'
+
+    // 3. Sanitizar candidatos e extrair Agremiações
+    const sanitizedCandidates: VotosCandidato[] = (formData.candidates || []).map(candidate => ({
+      ...candidate,
+      dataNascimento: RawDocumentTimeToDate(candidate.dataNascimento),
+      votos: candidate.votos ?? 0,
+      numero: candidate.numero,
+    }))
+
+    // Extrai federações ou partidos como agremiações únicas
+    const agremiacoesSet = new Set<string>()
+    const votosLegendaInicial: Record<string, number> = {}
+
+    sanitizedCandidates.forEach((candidate) => {
+      // Se tiver federação, a lei considera a federação como uma única agremiação
+      const agremiacao = candidate.federacao?.trim() || candidate.partido.trim()
+      if (agremiacao) {
+        agremiacoesSet.add(agremiacao)
+        votosLegendaInicial[agremiacao] = 0 // Inicializa a contagem de votos de legenda da agremiação zerada
+      }
+    })
+
+    const agremiacoes = Array.from(agremiacoesSet)
+
+    // 4. Montar o payload final para o domínio
+    const submitData: EleicaoDeputado = {
+      id: '', // Gerado automaticamente pelo repositório
+      title: formData.title,
+      description: formData.description,
+      startsAt: validDateStart,
+      endsAt: validDateEnd,
+      status,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      type: 'deputy',
+      uf: formData.state as UF,
+      agremiacoes, // Lista de partidos/federações extraída automaticamente
+      candidatos: sanitizedCandidates,
+      votosLegenda: votosLegendaInicial, // Mapa de votos de legenda zerado
+      votosBrancos: 0,
+      votosNulos: 0,
+    }
+
+    try {
+      await firebaseDeputy.create(submitData)
+      cleanForms()
+      router.refresh()
+    }
+    catch (error) {
+      console.error('Erro ao salvar eleição para deputado:', error)
+      alert('Ocorreu um erro ao salvar os dados da eleição de deputado. Tente novamente.')
+    }
+  }
+
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
 
@@ -209,6 +292,12 @@ export function EleicaoProvider({
 
       case 'president':
         handleSubmitPresident()
+        console.log('Dados Enviados:', { electionType, ...formData })
+        alert('Formulário enviado com sucesso!')
+        break
+
+      case 'deputy':
+        handleSubmitDeputy()
         console.log('Dados Enviados:', { electionType, ...formData })
         alert('Formulário enviado com sucesso!')
         break

@@ -2,7 +2,7 @@ import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { firestore } from '../firebase'
 import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
 import { CANDIDATES_ELECTION_SUBSOLLECTION } from './firebaseElectionPresidentRepository'
-import { votesCandidateAdapter } from '../adapter/firebaseVotesCandidateAdapter copy'
+import { votesCandidateAdapter, VotosCandidatoRawDocument } from '../adapter/firebaseVotesCandidateAdapter copy'
 
 export class FirebaseVotesCandidateRepository {
   /**
@@ -16,12 +16,12 @@ export class FirebaseVotesCandidateRepository {
       return []
     }
 
-    return snapshot.docs.map(docSnap => {
+    return snapshot.docs.map((docSnap) => {
       const raw = {
         id: docSnap.id,
         ...docSnap.data(),
-      }
-      return votesCandidateAdapter.fromDB(raw as any)
+      } as VotosCandidatoRawDocument
+      return votesCandidateAdapter.fromDB(raw)
     })
   }
 

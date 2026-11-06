@@ -71,7 +71,7 @@ class FirebasePresidentRepository {
         await firebaseVotesCandidate.saveBatch(
           generatedId,
           ELECTION_COLLECTION,
-          domain.candidatos
+          domain.candidatos,
         )
       }
     }
@@ -102,7 +102,7 @@ class FirebasePresidentRepository {
         await firebaseVotesCandidate.saveBatch(
           domain.id,
           ELECTION_COLLECTION,
-          domain.candidatos
+          domain.candidatos,
         )
       }
     }

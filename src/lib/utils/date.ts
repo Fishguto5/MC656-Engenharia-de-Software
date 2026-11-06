@@ -33,11 +33,11 @@ export function isValidTimeFrame(start: Timestamp, end: Timestamp): boolean {
 }
 
 // Aceita Timestamp, Date, string ISO, objeto com segundos (legado Firestore) ou null/undefined
-export type RawDateInput = Timestamp | Date | string | { seconds: number; nanoseconds: number } | null | undefined
+export type RawDateInput = Timestamp | Date | string | { seconds: number, nanoseconds: number } | null | undefined
 
 export function RawDocumentTimeToDate(
   dateInput: RawDateInput,
-  fallbackDate: Date = new Date()
+  fallbackDate: Date = new Date(),
 ): Date {
   if (!dateInput) {
     return fallbackDate
@@ -47,13 +47,17 @@ export function RawDocumentTimeToDate(
 
   if (dateInput instanceof Timestamp) {
     parsedDate = dateInput.toDate()
-  } else if (dateInput instanceof Date) {
+  }
+  else if (dateInput instanceof Date) {
     parsedDate = dateInput
-  } else if (typeof dateInput === 'object' && 'seconds' in dateInput && typeof dateInput.seconds === 'number') {
+  }
+  else if (typeof dateInput === 'object' && 'seconds' in dateInput && typeof dateInput.seconds === 'number') {
     parsedDate = new Date(dateInput.seconds * 1000)
-  } else if (typeof dateInput === 'string') {
+  }
+  else if (typeof dateInput === 'string') {
     parsedDate = new Date(dateInput)
-  } else {
+  }
+  else {
     return fallbackDate
   }
 
