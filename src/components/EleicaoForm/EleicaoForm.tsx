@@ -2,7 +2,7 @@ import styles from './EleicaoForm.module.css'
 import DeputadoForm from './DeputadoForm'
 import PresidenteForm from './PresidenteForm'
 import { useEleicao } from './EleicaoContext'
-import { getDateYearsAgo } from '@/lib/date/date'
+import { getDateYearsAgo } from '@/lib/utils/date'
 
 export default function EleicaoForm() {
   const {

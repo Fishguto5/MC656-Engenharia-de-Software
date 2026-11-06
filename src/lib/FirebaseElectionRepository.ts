@@ -76,6 +76,7 @@ export class FirebaseElectionRepository {
       status: input.status ?? 'draft',
       createdAt: now,
       updatedAt: now,
+      type: 'president',
     }
 
     const firebaseData = toFirebase(electionToCreate)
@@ -112,6 +113,7 @@ export class FirebaseElectionRepository {
       status: input.status ?? currentElection.status,
       createdAt: currentElection.createdAt,
       updatedAt: new Date(),
+      type: 'president',
     }
 
     const firebaseData = toFirebase(updatedElection)

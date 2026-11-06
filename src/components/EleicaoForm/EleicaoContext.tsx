@@ -7,7 +7,7 @@ export interface FormElectionData {
   description: string
   startsAt: string
   endsAt: string
-  seats: string
+  state: string
   candidates: VotosCandidato[]
 }
 
@@ -39,7 +39,7 @@ export function EleicaoProvider({
     description: '',
     startsAt: '',
     endsAt: '',
-    seats: '',
+    state: '',
     candidates: [],
   })
 
@@ -65,14 +65,14 @@ export function EleicaoProvider({
   function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newType = e.target.value as ElectionType
     setElectionType(newType)
-    setFormData(prev => ({ ...prev, seats: '', candidates: [] }))
+    setFormData(prev => ({ ...prev, state: '', candidates: [] }))
   }
 
   function handleDropDownChange(updatedCandidates: VotosCandidato[]) {
     setFormData(prev => ({ ...prev, candidates: updatedCandidates }))
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     console.log('Dados Enviados:', { electionType, ...formData })
     alert('Formulário enviado com sucesso!')

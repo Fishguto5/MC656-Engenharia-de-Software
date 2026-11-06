@@ -1,3 +1,4 @@
+import { UF } from '@/lib/deputado'
 import { Timestamp } from '@firebase/firestore'
 
 // Interface Base da eleição
@@ -13,6 +14,7 @@ export interface BaseElectionDocument {
   status: ElectionStatus
   createdAt: Timestamp
   updatedAt: Timestamp
+  type: ElectionType
 }
 
 // 1. Coleção 'candidatos'
@@ -30,12 +32,15 @@ export type VotosCandidatoDocument = {
   eleicaoId: string
   candidatoId: string
   votos: number
+  numero: number
 }
 
 // 2. Coleção 'eleicoesDeputados'
 export interface EleicaoDeputadoDocument extends BaseElectionDocument {
-  vagas: number
-  agremiacoes: string[]
+  type: 'deputy'
+  uf: UF
+  candidatosIds: string[] // Lista de IDs de candidatos concorrendo nesta uf
+  agremiacoes: string[] // Lista de partidos/federações válidos
   votosLegenda: Record<string, number> // {"NomeAgremiacao": quantidadeVotos}
   votosBrancos: number
   votosNulos: number
@@ -54,12 +59,15 @@ export interface ResultadoDeputadoConsolidadoDocument {
     quocientePartidario: number
     vagasQuociente: number
     vagasSobras: number
+    eleitosIds: string[]
   }>
   eleitosIds: string[] // Lista apenas com os IDs dos candidatos eleitos
 }
 
 // 3. Coleção 'eleicoesPresidente'
 export interface EleicaoPresidenteDocument extends BaseElectionDocument {
+  type: 'president'
+  candidatosIds: string[]
   turno: number
   votosBrancos: number
   votosNulos: number
@@ -77,6 +85,7 @@ export interface ResultadoPresidenteConsolidadoDocument {
 export type LocalConsulta = 'Brasil' | string
 
 export interface ConsultaPublicaDocument extends BaseElectionDocument {
+  type: 'public-consultation'
   local: LocalConsulta
   sim: number
   nao: number

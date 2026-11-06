@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore'
+
 export function getDateYearsAgo(years: number): string {
   const date = new Date()
   date.setFullYear(date.getFullYear() - years)
@@ -7,4 +9,15 @@ export function getDateYearsAgo(years: number): string {
   const dd = String(date.getDate()).padStart(2, '0')
 
   return `${yyyy}-${mm}-${dd}`
+}
+export function RawDocumentTimeToDate(date: Timestamp | string): Date {
+  let newDate = new Date()
+  if (date instanceof Timestamp) {
+    newDate = date.toDate()
+  }
+  else if (typeof date === 'string') {
+    newDate = new Date(date)
+  }
+
+  return newDate
 }

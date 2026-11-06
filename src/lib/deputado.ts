@@ -44,7 +44,15 @@ export const VOTACAO_MINIMA_CANDIDATO_SOBRAS = 20
 // Vagas de Deputado Federal por circunscrição nas Eleições 2026 (LC 78/1993).
 // O STF manteve as 513 cadeiras e o projeto que criava 531 foi vetado.
 // CF, art. 45, § 1º: mínimo de 8 e máximo de 70 por unidade da federação.
-export const VAGAS_DEPUTADO_FEDERAL = {
+export const LISTA_UFS = [
+  'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO',
+  'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR',
+  'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
+] as const
+
+export type UF = typeof LISTA_UFS[number]
+
+export const VAGAS_DEPUTADO_FEDERAL: Record<UF, number> = {
   AC: 8,
   AL: 9,
   AM: 8,
@@ -72,9 +80,7 @@ export const VAGAS_DEPUTADO_FEDERAL = {
   SE: 8,
   SP: 70,
   TO: 8,
-}
-
-export type UF = keyof typeof VAGAS_DEPUTADO_FEDERAL
+} as const
 
 // Nome da agremiação (partido ou federação) pela qual o VotosCandidato concorre.
 export function agremiacaoDe(VotosCandidato: VotosCandidato): string {

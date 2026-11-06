@@ -79,6 +79,7 @@ export function fromFirebase(
     status: parseStatus(data.status, id),
     createdAt: requireDate(data.created_at, 'created_at', id),
     updatedAt: requireDate(data.updated_at ?? data.created_at, 'updated_at', id),
+    type: 'president',
   }
 }
 

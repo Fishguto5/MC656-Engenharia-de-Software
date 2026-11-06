@@ -29,6 +29,7 @@ describe('FirebaseElectionAdapter', () => {
       status: 'scheduled',
       createdAt,
       updatedAt,
+      type: 'president',
     })
   })
 
@@ -116,6 +117,7 @@ describe('FirebaseElectionAdapter', () => {
       status: 'scheduled',
       createdAt,
       updatedAt,
+      type: 'president',
     }
 
     const firebaseData = toFirebase(election)

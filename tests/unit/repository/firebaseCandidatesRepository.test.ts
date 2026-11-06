@@ -1,5 +1,5 @@
 import { Candidato } from '@/interfaces/eleicaoInterfaces'
-import { CANDIDATES_COLLECTION, firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
+import { CANDIDATES_COLLECTION, firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository'
 import { addDoc, collection, doc, DocumentSnapshot, getDoc, getDocs, QuerySnapshot, updateDoc, writeBatch } from 'firebase/firestore'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -83,7 +83,7 @@ describe('FirebaseCandidateRepository', () => {
 
       vi.mocked(getDocs).mockResolvedValue(mockQuerySnapshot)
 
-      const candidatos = await firebaseCandidateRepository.findAll()
+      const candidatos = await firebaseCandidate.findAll()
 
       expect(getDocs).toHaveBeenCalledTimes(1)
       expect(candidatos).toHaveLength(2)
@@ -104,7 +104,7 @@ describe('FirebaseCandidateRepository', () => {
 
       vi.mocked(getDocs).mockResolvedValue(mockQuerySnapshot)
 
-      const candidatos = await firebaseCandidateRepository.findAll()
+      const candidatos = await firebaseCandidate.findAll()
 
       expect(getDocs).toHaveBeenCalledTimes(1)
       expect(candidatos).toHaveLength(0)
@@ -132,7 +132,7 @@ describe('FirebaseCandidateRepository', () => {
 
       vi.mocked(getDocs).mockResolvedValue(mockQuerySnapshot)
 
-      const candidatos = await firebaseCandidateRepository.findAllActive()
+      const candidatos = await firebaseCandidate.findAllActive()
 
       expect(getDocs).toHaveBeenCalledTimes(1)
       expect(candidatos).toHaveLength(1)
@@ -152,7 +152,7 @@ describe('FirebaseCandidateRepository', () => {
 
       vi.mocked(getDocs).mockResolvedValue(mockQuerySnapshot)
 
-      const candidatos = await firebaseCandidateRepository.findAllActive()
+      const candidatos = await firebaseCandidate.findAllActive()
 
       expect(getDocs).toHaveBeenCalledTimes(1)
       expect(candidatos).toHaveLength(0)
@@ -174,7 +174,7 @@ describe('FirebaseCandidateRepository', () => {
 
       vi.mocked(getDoc).mockResolvedValue(mockSnapshot)
 
-      const candidato = await firebaseCandidateRepository.findById('123')
+      const candidato = await firebaseCandidate.findById('123')
 
       expect(doc).toHaveBeenCalledWith(expect.any(Object), CANDIDATES_COLLECTION, '123')
       expect(getDoc).toHaveBeenCalledTimes(1)
@@ -192,7 +192,7 @@ describe('FirebaseCandidateRepository', () => {
 
       vi.mocked(getDoc).mockResolvedValue(mockSnapshot)
 
-      const candidato = await firebaseCandidateRepository.findById('999')
+      const candidato = await firebaseCandidate.findById('999')
 
       expect(candidato).toBeNull()
     })
@@ -200,7 +200,7 @@ describe('FirebaseCandidateRepository', () => {
 
   describe('Métodos de Escrita', () => {
     it('deve desativar o candidato corretamente (deactivate)', async () => {
-      await firebaseCandidateRepository.deactivate('123')
+      await firebaseCandidate.deactivate('123')
 
       expect(doc).toHaveBeenCalledWith(
         expect.any(Object),
@@ -223,7 +223,7 @@ describe('FirebaseCandidateRepository', () => {
         dataNascimento: new Date('2005-10-30T00:00:00'),
       }
 
-      await firebaseCandidateRepository.create(novoCandidato)
+      await firebaseCandidate.create(novoCandidato)
 
       expect(collection).toHaveBeenCalledWith(expect.any(Object), expect.any(String))
       expect(addDoc).toHaveBeenCalledTimes(1)
@@ -247,7 +247,7 @@ describe('FirebaseCandidateRepository', () => {
         dataNascimento: new Date('2005-10-31T00:00:00'),
       }
 
-      await firebaseCandidateRepository.create(candidatoJovem)
+      await firebaseCandidate.create(candidatoJovem)
 
       expect(addDoc).not.toHaveBeenCalled()
     })
@@ -262,7 +262,7 @@ describe('FirebaseCandidateRepository', () => {
         },
       ]
 
-      const resultado = await firebaseCandidateRepository.createBatch(listaCandidatos)
+      const resultado = await firebaseCandidate.createBatch(listaCandidatos)
 
       expect(resultado[0].id).toBe('auto-generated-id-123')
 
@@ -279,7 +279,7 @@ describe('FirebaseCandidateRepository', () => {
         dataNascimento: new Date('1998-08-20T00:00:00'),
       }
 
-      await firebaseCandidateRepository.update(candidatoAtualizado)
+      await firebaseCandidate.update(candidatoAtualizado)
 
       expect(doc).toHaveBeenCalledWith(
         expect.any(Object),

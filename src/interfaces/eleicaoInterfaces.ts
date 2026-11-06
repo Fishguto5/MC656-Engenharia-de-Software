@@ -1,4 +1,5 @@
-import { ElectionStatus } from './firebaseInterfaces'
+import { UF } from '@/lib/deputado'
+import { ElectionStatus, ElectionType, LocalConsulta } from './firebaseInterfaces'
 
 // Candidato
 export interface Candidato {
@@ -27,4 +28,61 @@ export interface BaseElection {
   status: ElectionStatus
   createdAt: Date
   updatedAt: Date
+  type: ElectionType
+}
+
+// Eleição Deputado
+export type VotosLegenda = Record<string, number>
+
+export interface EleicaoDeputado extends BaseElection {
+  id: string
+  uf: UF
+  agremiacoes: readonly string[]
+  candidatos: VotosCandidato[]
+  votosLegenda: VotosLegenda | ReadonlyMap<string, number>
+  votosBrancos: number
+  votosNulos: number
+  type: 'deputy'
+}
+
+export interface ResultadoAgremiacao {
+  agremiacao: string
+  votosNominais: number
+  votosLegenda: number
+  votosValidos: number
+  quocientePartidario: number
+  vagasQuociente: number
+  vagasSobras: number
+  eleitos: VotosCandidato[]
+}
+
+export interface ResultadoDeputado {
+  votosValidos: number
+  quocienteEleitoral: number
+  agremiacoes: ResultadoAgremiacao[]
+  eleitos: VotosCandidato[]
+}
+
+// Eleição Presidente
+export interface EleicaoPresidente extends BaseElection {
+  type: 'president'
+  candidatos: VotosCandidato[]
+  turno: number
+  votosBrancos: number
+  votosNulos: number
+}
+
+export interface ResultadoPresidente {
+  votosValidos: number
+  precisaSegundoTurno: boolean
+  apuradoEm: Date
+  candidatosVotacao: VotosCandidato[]
+}
+
+// Consulta Pública
+export interface ConsultaPublica extends BaseElection {
+  type: 'public-consultation'
+  local: LocalConsulta
+  sim: number
+  nao: number
 }

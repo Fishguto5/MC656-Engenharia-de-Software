@@ -2,6 +2,7 @@ import styles from './EleicaoForm.module.css'
 import CandidatoDropDown from '../CandidatoDropDown/CandidatoDropDown'
 import { useEleicao } from './EleicaoContext'
 import { maxDeputyDoB } from '@/lib/repository/firebaseElectionDeputyRepository'
+import { LISTA_UFS } from '@/lib/deputado'
 
 export default function DeputadoForm() {
   const { formData, handleFieldChange, initialCandidatos, handleDropDownChange } = useEleicao()
@@ -13,18 +14,21 @@ export default function DeputadoForm() {
 
   return (
     <div>
+
       <div className={`form-field ${styles.formField}`}>
-        <label htmlFor="seats">Vagas disponíveis</label>
-        <input
-          name="seats"
-          id="seats"
-          type="number"
-          min={1}
+        <label htmlFor="state">Estado</label>
+        <select
+          name="state"
+          id="state"
           autoComplete="off"
           required
           onChange={handleFieldChange}
-          value={formData.seats}
-        />
+          value={formData.state}
+        >
+          {LISTA_UFS.map(uf => (
+            <option value={uf} id={uf} key={uf}>{uf}</option>
+          ))}
+        </select>
       </div>
 
       <div className={styles.candidatosContainer}>

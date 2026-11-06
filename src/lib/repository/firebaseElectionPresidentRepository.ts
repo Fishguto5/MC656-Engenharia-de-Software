@@ -1,4 +1,4 @@
-import { getDateYearsAgo } from '../date/date'
+import { getDateYearsAgo } from '../utils/date'
 
 /* Idade mínima para Presidente = 35 anos */
 export const MINIMUM_PRESIDENT_AGE = 35

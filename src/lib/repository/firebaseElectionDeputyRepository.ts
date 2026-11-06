@@ -1,4 +1,4 @@
-import { getDateYearsAgo } from '../date/date'
+import { getDateYearsAgo } from '../utils/date'
 
 /* Idade mínima para Deputado = 21 anos */
 export const MINIMUM_DEPUTY_AGE = 21
