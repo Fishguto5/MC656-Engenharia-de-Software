@@ -5,7 +5,7 @@ import { publicConsultationAdapter, PublicConsultationRawDocument } from '../ada
 import { ConsultaPublicaDocument } from '@/interfaces/firebaseInterfaces'
 import { omitId } from '../utils/omitId'
 import { isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
-import { validateDraft } from '@/interfaces/electionDraftSchema'
+import { validateDraft } from '@/schemas/electionDraftSchema'
 
 export const ELECTION_COLLECTION = 'eleicoes'
 

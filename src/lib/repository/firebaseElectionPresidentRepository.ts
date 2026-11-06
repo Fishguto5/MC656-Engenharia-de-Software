@@ -7,7 +7,7 @@ import { EleicaoPresidente } from '@/interfaces/eleicaoInterfaces'
 import { PresidentRawDocument, presidentAdapter } from '../adapter/firebasePresidentAdapter'
 import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
 import { ELECTION_COLLECTION } from './firebasePublicConsultationRepository'
-import { validateDraft } from '@/interfaces/electionDraftSchema'
+import { validateDraft } from '@/schemas/electionDraftSchema'
 
 /* Idade mínima para Presidente = 35 anos */
 export const MINIMUM_PRESIDENT_AGE = 35

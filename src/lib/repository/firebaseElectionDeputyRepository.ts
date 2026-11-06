@@ -7,7 +7,7 @@ import { EleicaoDeputadoDocument } from '@/interfaces/firebaseInterfaces'
 import { DeputyRawDocument, deputyAdapter } from '../adapter/firebaseDeputyAdapter'
 import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
 import { ELECTION_COLLECTION } from './firebasePublicConsultationRepository'
-import { validateDraft } from '@/interfaces/electionDraftSchema'
+import { validateDraft } from '@/schemas/electionDraftSchema'
 
 /* Idade mínima para Deputado = 21 anos (art. 14, § 3º, VI, c da CF) */
 export const MINIMUM_DEPUTY_AGE = 21
