@@ -27,6 +27,7 @@ interface EleicaoContextData {
   handleSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
   handleDropDownChange: (updatedCandidates: VotosCandidato[]) => void
   handleSubmit: (e: React.SubmitEvent) => Promise<void>
+  handleSaveDraft: () => Promise<void>
 }
 
 const EleicaoContext = createContext<EleicaoContextData | undefined>(undefined)
@@ -64,6 +65,140 @@ export function EleicaoProvider({
     })
   }
 
+  // --- HANDLERS DO SAVE ----
+  async function handleSaveDraftPublicConsultation() {
+    // 1. Converter strings de data para Date (se preenchidas)
+    const startsAtDate = formData.startsAt ? InputDateToDate(formData.startsAt) ?? undefined : undefined
+    const endsAtDate = formData.endsAt ? InputDateToDate(formData.endsAt) ?? undefined : undefined
+
+    // 2. Mapear escopo local
+    let local: LocalConsulta | undefined
+    if (formData.scope === 'national') {
+      local = 'Brasil'
+    }
+    else if (formData.scope === 'state' && formData.state) {
+      local = formData.state as UF
+    }
+
+    // 3. Montar o objeto parcial do domínio
+    const draftData: Partial<ConsultaPublica> = {
+      title: formData.title || undefined,
+      description: formData.description || undefined,
+      startsAt: startsAtDate,
+      endsAt: endsAtDate,
+      type: 'public-consultation',
+      local,
+    }
+
+    try {
+      // 4. Chamar repositório enviando draftId (se existir) e o objeto parcial
+      await firebasePublicConsultation.saveDraft(null, draftData)
+
+      // Atualiza o ID do rascunho no estado local/URL para salvamentos subsequentes
+      alert('Rascunho de consulta pública salvo com sucesso!')
+    }
+    catch (error: unknown) {
+      console.error('Erro ao salvar rascunho de consulta pública:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro ao salvar o rascunho. Tente novamente.'
+      alert(errorMessage)
+    }
+  }
+
+  async function handleSaveDraftPresident() {
+    // 1. Converter strings de data para Date (se preenchidas)
+    const startsAtDate = formData.startsAt ? InputDateToDate(formData.startsAt) ?? undefined : undefined
+    const endsAtDate = formData.endsAt ? InputDateToDate(formData.endsAt) ?? undefined : undefined
+
+    // 2. Sanitizar candidatos se houver algum na lista
+    const sanitizedCandidates: VotosCandidato[] | undefined = formData.candidates?.map(candidate => ({
+      ...candidate,
+      dataNascimento: RawDocumentTimeToDate(candidate.dataNascimento),
+      votos: candidate.votos ?? 0,
+      numero: candidate.numero,
+    }))
+
+    // 3. Montar o objeto parcial do domínio
+    const draftData: Partial<EleicaoPresidente> = {
+      title: formData.title || undefined,
+      description: formData.description || undefined,
+      startsAt: startsAtDate,
+      endsAt: endsAtDate,
+      type: 'president',
+      candidatos: sanitizedCandidates,
+    }
+
+    try {
+      await firebasePresident.saveDraft(null, draftData)
+
+      alert('Rascunho de eleição para presidente salvo com sucesso!')
+    }
+    catch (error: unknown) {
+      console.error('Erro ao salvar rascunho de consulta pública:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro ao salvar o rascunho. Tente novamente.'
+      alert(errorMessage)
+    }
+  }
+
+  async function handleSaveDraftDeputy() {
+    // 1. Converter strings de data para Date (se preenchidas)
+    const startsAtDate = formData.startsAt ? InputDateToDate(formData.startsAt) ?? undefined : undefined
+    const endsAtDate = formData.endsAt ? InputDateToDate(formData.endsAt) ?? undefined : undefined
+
+    // 2. Sanitizar candidatos se houver algum na lista
+    const sanitizedCandidates: VotosCandidato[] | undefined = formData.candidates?.map(candidate => ({
+      ...candidate,
+      dataNascimento: RawDocumentTimeToDate(candidate.dataNascimento),
+      votos: candidate.votos ?? 0,
+      numero: candidate.numero,
+    }))
+
+    // 3. Montar o objeto parcial do domínio
+    const draftData: Partial<EleicaoDeputado> = {
+      title: formData.title || undefined,
+      description: formData.description || undefined,
+      startsAt: startsAtDate,
+      endsAt: endsAtDate,
+      type: 'deputy',
+      uf: (formData.state as UF) || undefined,
+      candidatos: sanitizedCandidates,
+    }
+
+    try {
+      await firebaseDeputy.saveDraft(null, draftData)
+
+      alert('Rascunho de eleição para deputado salvo com sucesso!')
+    }
+    catch (error: unknown) {
+      console.error('Erro ao salvar rascunho de consulta pública:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro ao salvar o rascunho. Tente novamente.'
+      alert(errorMessage)
+    }
+  }
+
+  async function handleSaveDraft() {
+    switch (electionType) {
+      case 'public-consultation':
+        await handleSaveDraftPublicConsultation()
+        cleanForms()
+        break
+
+      case 'president':
+        await handleSaveDraftPresident()
+        cleanForms()
+        break
+
+      case 'deputy':
+        await handleSaveDraftDeputy()
+        cleanForms()
+        break
+
+      default:
+        console.error('Tipo de eleição não suportado para rascunho')
+        break
+    }
+  }
+
+  // --- HANDLERS DOS FIELDS ----
   function handleFieldChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target
     const [prefix, id] = name.split('-')
@@ -93,6 +228,7 @@ export function EleicaoProvider({
     setFormData(prev => ({ ...prev, candidates: updatedCandidates }))
   }
 
+  // --- HANDLERS DO SUBMIT ----
   async function handleSubmitPublicConsultation() {
     // Validar datas
     const validDateStart = InputDateToDate(formData.startsAt)
@@ -318,6 +454,7 @@ export function EleicaoProvider({
       handleSelectChange,
       handleDropDownChange,
       handleSubmit,
+      handleSaveDraft,
     }}
     >
       {children}

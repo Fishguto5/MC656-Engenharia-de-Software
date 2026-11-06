@@ -13,6 +13,7 @@ export default function EleicaoForm() {
     handleFieldChange,
     handleSelectChange,
     handleSubmit,
+    handleSaveDraft,
   } = useEleicao()
 
   return (
@@ -100,7 +101,7 @@ export default function EleicaoForm() {
         <ConsultaPublicaForm />
       )}
 
-      <button type="button" className="primary-btn">Salvar Rascunho</button>
+      <button type="button" onClick={handleSaveDraft} className="primary-btn">Salvar Rascunho</button>
       <button type="submit" className="primary-btn">Publicar</button>
     </form>
   )

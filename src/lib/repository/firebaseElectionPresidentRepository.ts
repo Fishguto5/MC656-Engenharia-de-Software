@@ -1,12 +1,13 @@
 import { EleicaoPresidenteDocument } from '@/interfaces/firebaseInterfaces'
 import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc } from 'firebase/firestore'
 import { firestore } from '../firebase'
-import { getDateYearsAgo, isValidTimeFrame } from '../utils/date'
+import { getDateYearsAgo, isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { omitId } from '../utils/omitId'
 import { EleicaoPresidente } from '@/interfaces/eleicaoInterfaces'
 import { PresidentRawDocument, presidentAdapter } from '../adapter/firebasePresidentAdapter'
 import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
 import { ELECTION_COLLECTION } from './firebasePublicConsultationRepository'
+import { validateDraft } from '@/interfaces/electionDraftSchema'
 
 /* Idade mínima para Presidente = 35 anos */
 export const MINIMUM_PRESIDENT_AGE = 35
@@ -109,6 +110,71 @@ class FirebasePresidentRepository {
     catch (error) {
       console.error(`Erro ao atualizar a Eleição para presidente com ID ${domain.id}:`, error)
       throw new Error(`Não foi possível atualizar os dados da Eleição para presidente ${domain.id}.`)
+    }
+  }
+
+  async saveDraft(draftId: string | null, domain: Partial<EleicaoPresidente>): Promise<string> {
+    const startsAtDate = domain.startsAt ? RawDocumentTimeToDate(domain.startsAt) : undefined
+    const endsAtDate = domain.endsAt ? RawDocumentTimeToDate(domain.endsAt) : undefined
+
+    const sanitizedCandidates = domain.candidatos
+      ? domain.candidatos.map(candidate => ({
+          ...candidate,
+          dataNascimento: RawDocumentTimeToDate(candidate.dataNascimento),
+          votos: candidate.votos ?? 0,
+        }))
+      : undefined
+
+    const errorMsg = validateDraft('president', {
+      startsAt: startsAtDate,
+      endsAt: endsAtDate,
+      candidates: sanitizedCandidates,
+    })
+
+    if (errorMsg) {
+      throw new Error(errorMsg)
+    }
+
+    const docRef = draftId
+      ? doc(firestore, ELECTION_COLLECTION, draftId)
+      : doc(collection(firestore, ELECTION_COLLECTION))
+
+    const currentId = docRef.id
+
+    const draftData: Record<string, unknown> = {
+      status: 'draft',
+      type: 'president',
+      turno: domain.turno ?? 1,
+      votosBrancos: domain.votosBrancos ?? 0,
+      votosNulos: domain.votosNulos ?? 0,
+      updatedAt: serverTimestamp(),
+    }
+
+    if (!draftId) {
+      draftData.createdAt = serverTimestamp()
+    }
+
+    if (domain.title !== undefined) draftData.title = domain.title
+    if (domain.description !== undefined) draftData.description = domain.description
+    if (startsAtDate !== undefined) draftData.startsAt = Timestamp.fromDate(startsAtDate)
+    if (endsAtDate !== undefined) draftData.endsAt = Timestamp.fromDate(endsAtDate)
+
+    try {
+      await setDoc(docRef, draftData, { merge: true })
+
+      if (sanitizedCandidates && sanitizedCandidates.length > 0) {
+        await firebaseVotesCandidate.saveBatch(
+          currentId,
+          ELECTION_COLLECTION,
+          sanitizedCandidates,
+        )
+      }
+
+      return currentId
+    }
+    catch (error) {
+      console.error('Erro ao salvar rascunho de eleição para presidente:', error)
+      throw error
     }
   }
 }
