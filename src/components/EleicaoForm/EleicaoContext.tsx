@@ -1,6 +1,10 @@
 import { createContext, useContext, useState } from 'react'
-import { ElectionType } from '@/interfaces/firebaseInterfaces'
-import { Candidato, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
+import { ElectionStatus, ElectionType, LocalConsulta } from '@/interfaces/firebaseInterfaces'
+import { Candidato, ConsultaPublica, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
+import { InputDateToDate } from '@/lib/utils/date'
+import { firebasePublicConsultation } from '@/lib/repository/firebasePublicConsultationRepository'
+import { useRouter } from 'next/navigation'
+import { UF } from '@/lib/deputado'
 
 export interface FormElectionData {
   title: string
@@ -9,6 +13,7 @@ export interface FormElectionData {
   endsAt: string
   state: string
   candidates: VotosCandidato[]
+  scope: 'national' | 'state'
 }
 
 interface EleicaoContextData {
@@ -33,6 +38,7 @@ export function EleicaoProvider({
   initialCandidatos: Candidato[]
   isEditing?: boolean
 }) {
+  const router = useRouter()
   const [electionType, setElectionType] = useState<ElectionType>('president')
   const [formData, setFormData] = useState<FormElectionData>({
     title: '',
@@ -41,7 +47,20 @@ export function EleicaoProvider({
     endsAt: '',
     state: '',
     candidates: [],
+    scope: 'national',
   })
+
+  function cleanForms() {
+    setFormData({
+      title: '',
+      description: '',
+      startsAt: '',
+      endsAt: '',
+      state: '',
+      candidates: [],
+      scope: 'national',
+    })
+  }
 
   function handleFieldChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target
@@ -72,10 +91,71 @@ export function EleicaoProvider({
     setFormData(prev => ({ ...prev, candidates: updatedCandidates }))
   }
 
+  async function handleSubmitPublicConsultation() {
+    // Validar datas
+    const validDateStart = InputDateToDate(formData.startsAt)
+    if (!validDateStart) {
+      alert('Por favor, insira uma data de início (formato YYYY-MM-DD).')
+      return
+    }
+    const validDateEnd = InputDateToDate(formData.endsAt)
+    if (!validDateEnd) {
+      alert('Por favor, insira uma data de finalização (formato YYYY-MM-DD).')
+      return
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    let local: LocalConsulta = 'Brasil'
+    if (formData.scope == 'state') {
+      local = formData.state as UF
+    }
+
+    const status = today < validDateStart ? 'scheduled' as ElectionStatus : 'open' as ElectionStatus
+
+    // Enviar para o DB
+    const submitData = {
+      id: '',
+      title: formData.title,
+      description: formData.description,
+      startsAt: validDateStart,
+      endsAt: validDateEnd,
+      type: 'public-consultation' as ElectionType,
+      status: status,
+      createdAt: today,
+      updatedAt: today,
+      local: local,
+      nao: 0,
+      sim: 0,
+
+    } as ConsultaPublica
+
+    try {
+      await firebasePublicConsultation.create(submitData)
+      cleanForms()
+      router.refresh()
+    }
+    catch (error) {
+      console.error('Erro ao salvar consulta pública:', error)
+      alert('Ocorreu um erro ao salvar os dados. Tente novamente.')
+    }
+  }
+
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
-    console.log('Dados Enviados:', { electionType, ...formData })
-    alert('Formulário enviado com sucesso!')
+
+    switch (electionType) {
+      case 'public-consultation':
+        handleSubmitPublicConsultation()
+        console.log('Dados Enviados:', { electionType, ...formData })
+        alert('Formulário enviado com sucesso!')
+        break
+
+      default:
+        console.error('Tipo de eleição não suportado')
+        break
+    }
   }
 
   return (

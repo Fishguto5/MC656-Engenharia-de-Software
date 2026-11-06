@@ -5,6 +5,7 @@ import '../candidato.css'
 import { firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository'
 import { useRouter } from 'next/navigation'
 import CandidatoForm from '@/components/CandidatoForm/CandidatoForm'
+import { InputDateToDate } from '@/lib/utils/date'
 
 export default function CadastrarCandidato() {
   const router = useRouter()
@@ -29,16 +30,6 @@ export default function CadastrarCandidato() {
       ...formsData,
       [e.target.name]: e.target.value,
     })
-  }
-
-  function InputDateToDate(date: string): Date | null {
-    const regex = /^\d{4}-\d{2}-\d{2}$/
-
-    if (regex.test(date)) {
-      const [year, month, day] = date.split('-').map(Number)
-      return new Date(year, month - 1, day)
-    }
-    return null
   }
 
   async function handleSubmit(e: React.SubmitEvent) {

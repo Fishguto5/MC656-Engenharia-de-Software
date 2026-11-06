@@ -21,3 +21,13 @@ export function RawDocumentTimeToDate(date: Timestamp | string): Date {
 
   return newDate
 }
+
+export function InputDateToDate(date: string): Date | null {
+  const regex = /^\d{4}-\d{2}-\d{2}$/
+
+  if (regex.test(date)) {
+    const [year, month, day] = date.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+  return null
+}

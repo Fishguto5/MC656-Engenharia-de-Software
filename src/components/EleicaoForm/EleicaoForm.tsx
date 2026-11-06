@@ -3,6 +3,7 @@ import DeputadoForm from './DeputadoForm'
 import PresidenteForm from './PresidenteForm'
 import { useEleicao } from './EleicaoContext'
 import { getDateYearsAgo } from '@/lib/utils/date'
+import ConsultaPublicaForm from './ConsultaPublicaForm'
 
 export default function EleicaoForm() {
   const {
@@ -94,6 +95,9 @@ export default function EleicaoForm() {
       )}
       {electionType == 'president' && (
         <PresidenteForm />
+      )}
+      {electionType == 'public-consultation' && (
+        <ConsultaPublicaForm />
       )}
 
       <button type="button" className="primary-btn">Salvar Rascunho</button>

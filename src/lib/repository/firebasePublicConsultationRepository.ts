@@ -1,11 +1,11 @@
 import { ConsultaPublica } from '@/interfaces/eleicaoInterfaces'
-import { collection, doc, updateDoc, getDoc, addDoc, Timestamp } from 'firebase/firestore'
+import { collection, doc, updateDoc, getDoc, addDoc, Timestamp, serverTimestamp } from 'firebase/firestore'
 import { firestore } from '../firebase'
 import { publicConsultationAdapter, PublicConsultationRawDocument } from '../adapter/firebasePublicConsultationAdapter'
 import { ConsultaPublicaDocument } from '@/interfaces/firebaseInterfaces'
 import { omitId } from '../utils/omitId'
 
-export const PUBLIC_CONSULTATION_COLLECTION = 'eleicao'
+export const PUBLIC_CONSULTATION_COLLECTION = 'eleicoes'
 
 class FirebasePublicConsultationRepository {
   private isValidTimeFrame(start: Timestamp, end: Timestamp): boolean {
@@ -52,7 +52,11 @@ class FirebasePublicConsultationRepository {
     }
 
     // Criar data
-    const data = omitId<ConsultaPublicaDocument>(dbData)
+    const data: Omit<ConsultaPublicaDocument, 'id'> = {
+      ...omitId<ConsultaPublicaDocument>(dbData),
+      createdAt: serverTimestamp() as unknown as Timestamp,
+      updatedAt: serverTimestamp() as unknown as Timestamp,
+    }
 
     try {
       await addDoc(collection(firestore, PUBLIC_CONSULTATION_COLLECTION), data)
@@ -71,7 +75,10 @@ class FirebasePublicConsultationRepository {
       return
     }
 
-    const data = omitId<ConsultaPublicaDocument>(dbData)
+    const data: Omit<ConsultaPublicaDocument, 'id'> = {
+      ...omitId<ConsultaPublicaDocument>(dbData),
+      updatedAt: serverTimestamp() as unknown as Timestamp,
+    }
 
     const publicConsultationRef = doc(firestore, PUBLIC_CONSULTATION_COLLECTION, domain.id)
 

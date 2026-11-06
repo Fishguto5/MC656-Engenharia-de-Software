@@ -82,7 +82,7 @@ export interface ResultadoPresidenteConsolidadoDocument {
 }
 
 // 4. Coleção 'consultasPublicas'
-export type LocalConsulta = 'Brasil' | string
+export type LocalConsulta = 'Brasil' | UF // Por enquanto, apenas consultas nacionais ou estaduais
 
 export interface ConsultaPublicaDocument extends BaseElectionDocument {
   type: 'public-consultation'
