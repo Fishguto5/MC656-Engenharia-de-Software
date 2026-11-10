@@ -8,7 +8,7 @@ import { isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { validateDraft } from '@/schemas/electionDraftSchema'
 import { ELECTION_COLLECTION } from '../constants/election'
 
-class FirebasePublicConsultationRepository {
+export class FirebasePublicConsultationRepository {
   // async findAll(): Promise<ConsultaPublica[]> {}
 
   async findById(id: string): Promise<ConsultaPublica | null> {
@@ -160,5 +160,3 @@ class FirebasePublicConsultationRepository {
     }
   }
 }
-
-export const firebasePublicConsultation = new FirebasePublicConsultationRepository()

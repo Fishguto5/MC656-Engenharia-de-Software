@@ -1,5 +1,6 @@
 import { Candidato } from '@/interfaces/eleicaoInterfaces'
-import { CANDIDATES_COLLECTION, firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository'
+import { CANDIDATES_COLLECTION } from '@/lib/constants/election'
+import { firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository'
 import { addDoc, collection, doc, DocumentSnapshot, getDoc, getDocs, QuerySnapshot, updateDoc, writeBatch } from 'firebase/firestore'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -12,7 +12,7 @@ import { UF } from '../deputado'
 
 export const maxDeputyDoB = () => getDateYearsAgo(MINIMUM_DEPUTY_AGE)
 
-class FirebaseDeputyRepository {
+export class FirebaseDeputyRepository {
   async findById(id: string): Promise<EleicaoDeputado | null> {
     const deputyRef = doc(firestore, ELECTION_COLLECTION, id)
     const snapshot = await getDoc(deputyRef)
@@ -228,5 +228,3 @@ class FirebaseDeputyRepository {
     }
   }
 }
-
-export const firebaseDeputy = new FirebaseDeputyRepository()

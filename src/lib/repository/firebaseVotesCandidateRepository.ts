@@ -1,7 +1,7 @@
 import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { firestore } from '../firebase'
 import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
-import { votesCandidateAdapter, VotosCandidatoRawDocument } from '../adapter/firebaseVotesCandidateAdapter'
+import { votesCandidateAdapter } from '../adapter/firebaseVotesCandidateAdapter'
 import { CANDIDATES_ELECTION_SUBSOLLECTION } from '../constants/election'
 import { firebaseCandidate } from './firebaseCandidatesRepository'
 
@@ -29,9 +29,9 @@ export class FirebaseVotesCandidateRepository {
     })
 
     // Coleta todos os IDs para buscar em lote na coleção global
-    const candidatoIds = votosDocs.map((v) => v.candidatoId)
+    const candidatoIds = votosDocs.map(v => v.candidatoId)
     const candidatosBase = await firebaseCandidate.findBatchById(candidatoIds)
-    const candidatosMap = new Map(candidatosBase.map((c) => [c.id, c]))
+    const candidatosMap = new Map(candidatosBase.map(c => [c.id, c]))
 
     // Combina os dados de voto com os dados cadastrais do candidato
     const resultado: VotosCandidato[] = []

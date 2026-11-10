@@ -2,11 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { ElectionStatus, ElectionType, LocalConsulta } from '@/interfaces/firebaseInterfaces'
 import { Candidato, ConsultaPublica, EleicaoDeputado, EleicaoPresidente, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { InputDateToDate, RawDocumentTimeToDate } from '@/lib/utils/date'
-import { firebasePublicConsultation } from '@/lib/repository/firebasePublicConsultationRepository'
 import { useRouter } from 'next/navigation'
 import { UF } from '@/lib/deputado'
-import { firebasePresident } from '@/lib/repository/firebaseElectionPresidentRepository'
-import { firebaseDeputy } from '@/lib/repository/firebaseElectionDeputyRepository'
 import { firebaseElection } from '@/lib/repository/FirebaseElectionFacade'
 
 export interface FormElectionData {
@@ -58,34 +55,34 @@ export function EleicaoProvider({
   const [electionFound, setElectionFound] = useState<boolean>(false)
 
   // --- PEGAR DADOS DO ELECTION ID ----
-  useEffect(() => {    
+  useEffect(() => {
     let isMounted = true
 
     async function getEleicao() {
       const id = electionId
-      if(!id || !isEditing) return
+      if (!id || !isEditing) return
 
       try {
         const tipoEleicao = await firebaseElection.getDraftType(id)
-        if(!tipoEleicao) return
+        if (!tipoEleicao) return
 
         const eleicao = await firebaseElection.findDraftById(id, tipoEleicao)
-        if(isMounted && eleicao){
-          const state: UF = 
-            ('local' in eleicao && eleicao.local && eleicao.local !== 'Brasil') 
+        if (isMounted && eleicao) {
+          const state: UF
+            = ('local' in eleicao && eleicao.local && eleicao.local !== 'Brasil')
               ? (eleicao.local as UF)
-              : ('uf' in eleicao && eleicao.uf) 
-                ? eleicao.uf 
-                : 'AC'
+              : ('uf' in eleicao && eleicao.uf)
+                  ? eleicao.uf
+                  : 'AC'
 
-          setFormData((prev)=>({
+          setFormData(prev => ({
             ...prev,
             title: eleicao.title ?? '',
             description: eleicao.description ?? '',
             startsAt: eleicao.startsAt ? eleicao.startsAt.toISOString().split('T')[0] : '',
             endsAt: eleicao.endsAt ? eleicao.endsAt.toISOString().split('T')[0] : '',
-            candidates: ("candidatos" in eleicao && eleicao.candidatos) ? eleicao.candidatos : [],
-            scope: ("local" in eleicao && eleicao.local && eleicao.local !== "Brasil") ? 'state' : 'national',
+            candidates: ('candidatos' in eleicao && eleicao.candidatos) ? eleicao.candidatos : [],
+            scope: ('local' in eleicao && eleicao.local && eleicao.local !== 'Brasil') ? 'state' : 'national',
             state: state,
           }))
 
@@ -103,8 +100,7 @@ export function EleicaoProvider({
     return () => {
       isMounted = false
     }
-    
-  }, [electionId])
+  }, [electionId, isEditing])
 
   function cleanForms() {
     setFormData({
@@ -147,11 +143,11 @@ export function EleicaoProvider({
     try {
       // 4. Chamar repositório enviando draftId (se existir) e o objeto parcial
       console.log(draftData)
-      await firebasePublicConsultation.saveDraft(id, draftData)
+      await firebaseElection.saveDraft('public-consultation', id, draftData)
 
       // Atualiza o ID do rascunho no estado local/URL para salvamentos subsequentes
       alert('Rascunho de consulta pública salvo com sucesso!')
-      if(!isEditing || !electionId) {
+      if (!isEditing || !electionId) {
         cleanForms()
       }
     }
@@ -187,10 +183,10 @@ export function EleicaoProvider({
     const id = (isEditing && electionId) ? electionId : null
 
     try {
-      await firebasePresident.saveDraft(id, draftData)
+      await firebaseElection.saveDraft('president', id, draftData)
 
       alert('Rascunho de eleição para presidente salvo com sucesso!')
-      if(!isEditing || !electionId) {
+      if (!isEditing || !electionId) {
         cleanForms()
       }
     }
@@ -227,10 +223,10 @@ export function EleicaoProvider({
     const id = (isEditing && electionId) ? electionId : null
 
     try {
-      await firebaseDeputy.saveDraft(id, draftData)
+      await firebaseElection.saveDraft('deputy', id, draftData)
 
       alert('Rascunho de eleição para deputado salvo com sucesso!')
-      if(!isEditing || !electionId) {
+      if (!isEditing || !electionId) {
         cleanForms()
       }
     }
@@ -333,14 +329,15 @@ export function EleicaoProvider({
     } as ConsultaPublica
 
     try {
-      if(isEditing && electionId){
+      if (isEditing && electionId) {
         submitData.id = electionId
-        await firebaseElection.update("public-consultation", submitData)
-      } else {
-        await firebasePublicConsultation.create(submitData)
+        await firebaseElection.update('public-consultation', submitData)
+      }
+      else {
+        await firebaseElection.create('public-consultation', submitData)
         cleanForms()
       }
-      
+
       router.refresh()
     }
     catch (error) {
@@ -399,11 +396,12 @@ export function EleicaoProvider({
     } as EleicaoPresidente
 
     try {
-      if(isEditing && electionId){
+      if (isEditing && electionId) {
         submitData.id = electionId
-        await firebaseElection.update("president", submitData)
-      } else {
-        await firebasePresident.create(submitData)
+        await firebaseElection.update('president', submitData)
+      }
+      else {
+        await firebaseElection.create('president', submitData)
         cleanForms()
       }
       router.refresh()
@@ -480,11 +478,12 @@ export function EleicaoProvider({
     }
 
     try {
-      if(isEditing && electionId){
+      if (isEditing && electionId) {
         submitData.id = electionId
-        await firebaseElection.update("deputy", submitData)
-      } else {
-        await firebaseDeputy.create(submitData)
+        await firebaseElection.update('deputy', submitData)
+      }
+      else {
+        await firebaseElection.create('deputy', submitData)
         cleanForms()
       }
       router.refresh()
@@ -523,22 +522,24 @@ export function EleicaoProvider({
     }
   }
 
-  return ( (isEditing && electionId && !electionFound)
+  return ((isEditing && electionId && !electionFound)
     ? <h2>404: Rascunho da eleição não encontrada</h2>
-    : <EleicaoContext.Provider value={{
-      formData,
-      electionType,
-      initialCandidatos,
-      isEditing,
-      handleFieldChange,
-      handleSelectChange,
-      handleDropDownChange,
-      handleSubmit,
-      handleSaveDraft,
-    }}
-    >
-      {children}      
-    </EleicaoContext.Provider>
+    : (
+        <EleicaoContext.Provider value={{
+          formData,
+          electionType,
+          initialCandidatos,
+          isEditing,
+          handleFieldChange,
+          handleSelectChange,
+          handleDropDownChange,
+          handleSubmit,
+          handleSaveDraft,
+        }}
+        >
+          {children}
+        </EleicaoContext.Provider>
+      )
   )
 }
 

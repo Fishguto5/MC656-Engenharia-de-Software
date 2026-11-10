@@ -3,7 +3,6 @@ import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateD
 import { candidateAdapter, CandidatoRawDocument } from '../adapter/firebaseCandidateAdapter'
 import { firestore } from '../firebase'
 import { getDateYearsAgo } from '../utils/date'
-import { MINIMUM_DEPUTY_AGE } from './firebaseElectionDeputyRepository'
 import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
 import { omitId } from '../utils/omitId'
 import { MINIMUM_AGE, CANDIDATES_COLLECTION } from '../constants/election'

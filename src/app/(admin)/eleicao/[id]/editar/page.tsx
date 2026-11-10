@@ -8,8 +8,8 @@ import { useParams } from 'next/navigation'
 const initialCandidatos = await firebaseCandidate.findAllActive() ?? []
 
 export default function EditarEleicao() {
-    const params = useParams()
-    const id = params.id as string
+  const params = useParams()
+  const id = params.id as string
   return (
     <main className="signup-candidate-page">
       <h1>Editar Eleição</h1>

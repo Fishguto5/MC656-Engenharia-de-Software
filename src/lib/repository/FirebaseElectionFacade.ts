@@ -1,22 +1,27 @@
-import { ElectionStatus, ElectionType, validElectionType } from "@/interfaces/firebaseInterfaces"
-import { doc, getDoc } from "firebase/firestore"
-import { firestore } from "../firebase"
-import { firebaseDeputy } from "./firebaseElectionDeputyRepository"
-import { firebasePresident } from "./firebaseElectionPresidentRepository"
-import { firebasePublicConsultation } from "./firebasePublicConsultationRepository"
-import { ELECTION_COLLECTION } from "../constants/election"
-import { EleicaoPresidente, EleicaoDeputado, ConsultaPublica } from "@/interfaces/eleicaoInterfaces"
+import { ElectionStatus, ElectionType, validElectionType } from '@/interfaces/firebaseInterfaces'
+import { doc, getDoc } from 'firebase/firestore'
+import { firestore } from '../firebase'
+import { FirebaseDeputyRepository } from './firebaseElectionDeputyRepository'
+import { FirebasePresidentRepository } from './firebaseElectionPresidentRepository'
+import { FirebasePublicConsultationRepository } from './firebasePublicConsultationRepository'
+import { ELECTION_COLLECTION } from '../constants/election'
+import { EleicaoPresidente, EleicaoDeputado, ConsultaPublica } from '@/interfaces/eleicaoInterfaces'
 
 // União de todos os domínios aceitos
 export type EleicaoDomain = EleicaoPresidente | EleicaoDeputado | ConsultaPublica
 
 class FirebaseElectionFacade {
+  // Repositórios
+  private firebaseDeputy = new FirebaseDeputyRepository()
+  private firebasePresident = new FirebasePresidentRepository()
+  private firebasePublicConsultation = new FirebasePublicConsultationRepository()
+
   // Retorna os repositórios apenas quando chamados, garantindo que tudo já foi inicializado
   private get repositories() {
     return {
-      president: firebasePresident,
-      deputy: firebaseDeputy,
-      'public-consultation': firebasePublicConsultation,
+      'president': this.firebasePresident,
+      'deputy': this.firebaseDeputy,
+      'public-consultation': this.firebasePublicConsultation,
     }
   }
 
@@ -29,7 +34,7 @@ class FirebaseElectionFacade {
 
     // Verificar se o status é draft
     const electionData = snapshot.data()
-    if (!electionData?.status || electionData.status !== ("draft" as ElectionStatus)) {
+    if (!electionData?.status || electionData.status !== ('draft' as ElectionStatus)) {
       return null
     }
 
@@ -53,7 +58,7 @@ class FirebaseElectionFacade {
     return repo.findById(id)
   }
 
-  async findDraftById(id: string, type: ElectionType): Promise<Partial<EleicaoDomain> | null > {
+  async findDraftById(id: string, type: ElectionType): Promise<Partial<EleicaoDomain> | null> {
     const repo = this.repositories[type]
     if (!repo) return null
     return repo.findDraftById(id)

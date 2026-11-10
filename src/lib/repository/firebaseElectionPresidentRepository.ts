@@ -13,7 +13,7 @@ export const maxPresidentDoB = () => {
   return getDateYearsAgo(MINIMUM_PRESIDENT_AGE)
 }
 
-class FirebasePresidentRepository {
+export class FirebasePresidentRepository {
   async findById(id: string): Promise<EleicaoPresidente | null> {
     const presidentRef = doc(firestore, ELECTION_COLLECTION, id)
     const snapshot = await getDoc(presidentRef)
@@ -80,7 +80,6 @@ class FirebasePresidentRepository {
 
     return draft
   }
-  
 
   async create(domain: EleicaoPresidente): Promise<void> {
     const dbData = presidentAdapter.toDB(domain)
@@ -213,5 +212,3 @@ class FirebasePresidentRepository {
     }
   }
 }
-
-export const firebasePresident = new FirebasePresidentRepository()
