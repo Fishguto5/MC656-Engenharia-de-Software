@@ -1,6 +1,5 @@
 import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
-import { MINIMUM_DEPUTY_AGE } from '@/lib/repository/firebaseElectionDeputyRepository'
-import { MINIMUM_PRESIDENT_AGE } from '@/lib/repository/firebaseElectionPresidentRepository'
+import { MINIMUM_PRESIDENT_AGE, MINIMUM_DEPUTY_AGE } from '@/lib/constants/election'
 
 const hasMinimumAge = (dob: Date, minAge: number) => {
   const today = new Date()

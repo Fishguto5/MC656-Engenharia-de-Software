@@ -11,6 +11,7 @@ export function getDateYearsAgo(years: number): string {
   return `${yyyy}-${mm}-${dd}`
 }
 
+/* YYYY-MM-DD => Date */
 export function InputDateToDate(date: string): Date | null {
   const regex = /^\d{4}-\d{2}-\d{2}$/
 

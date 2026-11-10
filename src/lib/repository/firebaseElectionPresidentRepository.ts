@@ -1,4 +1,4 @@
-import { EleicaoPresidenteDocument } from '@/interfaces/firebaseInterfaces'
+import { ElectionStatus, EleicaoPresidenteDocument } from '@/interfaces/firebaseInterfaces'
 import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc } from 'firebase/firestore'
 import { firestore } from '../firebase'
 import { getDateYearsAgo, isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
@@ -6,17 +6,12 @@ import { omitId } from '../utils/omitId'
 import { EleicaoPresidente } from '@/interfaces/eleicaoInterfaces'
 import { PresidentRawDocument, presidentAdapter } from '../adapter/firebasePresidentAdapter'
 import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
-import { ELECTION_COLLECTION } from './firebasePublicConsultationRepository'
 import { validateDraft } from '@/schemas/electionDraftSchema'
+import { ELECTION_COLLECTION, MINIMUM_PRESIDENT_AGE } from '../constants/election'
 
-/* Idade mínima para Presidente = 35 anos */
-export const MINIMUM_PRESIDENT_AGE = 35
 export const maxPresidentDoB = () => {
   return getDateYearsAgo(MINIMUM_PRESIDENT_AGE)
 }
-
-// Usando a constante padrão para a coleção de eleições de presidente
-export const CANDIDATES_ELECTION_SUBSOLLECTION = 'candidatos'
 
 class FirebasePresidentRepository {
   async findById(id: string): Promise<EleicaoPresidente | null> {
@@ -45,6 +40,47 @@ class FirebasePresidentRepository {
       return null
     }
   }
+
+  async findDraftById(id: string): Promise<Partial<EleicaoPresidente> | null> {
+    const presidentRef = doc(firestore, ELECTION_COLLECTION, id)
+    const snapshot = await getDoc(presidentRef)
+
+    if (!snapshot.exists()) {
+      return null
+    }
+
+    const data = snapshot.data()
+
+    // Helper para verificar se o valor está preenchido
+    const hasValue = (val: unknown): boolean => {
+      return val !== null && val !== undefined && val !== ''
+    }
+
+    const draft: Partial<EleicaoPresidente> = {
+      id: snapshot.id,
+      ...(hasValue(data.title) && { title: data.title }),
+      ...(hasValue(data.description) && { description: data.description }),
+      ...(hasValue(data.status) && { status: data.status as ElectionStatus }),
+      ...(hasValue(data.type) && { type: data.type }),
+      ...(hasValue(data.turno) && { turno: data.turno }),
+      ...(hasValue(data.votosBrancos) && { votosBrancos: data.votosBrancos }),
+      ...(hasValue(data.votosNulos) && { votosNulos: data.votosNulos }),
+      ...(hasValue(data.startsAt) && { startsAt: RawDocumentTimeToDate(data.startsAt) }),
+      ...(hasValue(data.endsAt) && { endsAt: RawDocumentTimeToDate(data.endsAt) }),
+      ...(hasValue(data.createdAt) && { createdAt: RawDocumentTimeToDate(data.createdAt) }),
+      ...(hasValue(data.updatedAt) && { updatedAt: RawDocumentTimeToDate(data.updatedAt) }),
+      candidatos: [],
+    }
+
+    // Busca candidatos salvos na subcoleção do rascunho (se houver)
+    const candidatos = await firebaseVotesCandidate.findByElectionId(id, ELECTION_COLLECTION)
+    if (candidatos && candidatos.length > 0) {
+      draft.candidatos = candidatos
+    }
+
+    return draft
+  }
+  
 
   async create(domain: EleicaoPresidente): Promise<void> {
     const dbData = presidentAdapter.toDB(domain)
@@ -142,6 +178,10 @@ class FirebasePresidentRepository {
     const currentId = docRef.id
 
     const draftData: Record<string, unknown> = {
+      title: domain.title ?? null,
+      description: domain.description ?? null,
+      startsAt: startsAtDate ? Timestamp.fromDate(startsAtDate) : null,
+      endsAt: endsAtDate ? Timestamp.fromDate(endsAtDate) : null,
       status: 'draft',
       type: 'president',
       turno: domain.turno ?? 1,
@@ -153,11 +193,6 @@ class FirebasePresidentRepository {
     if (!draftId) {
       draftData.createdAt = serverTimestamp()
     }
-
-    if (domain.title !== undefined) draftData.title = domain.title
-    if (domain.description !== undefined) draftData.description = domain.description
-    if (startsAtDate !== undefined) draftData.startsAt = Timestamp.fromDate(startsAtDate)
-    if (endsAtDate !== undefined) draftData.endsAt = Timestamp.fromDate(endsAtDate)
 
     try {
       await setDoc(docRef, draftData, { merge: true })

@@ -6,10 +6,10 @@ import { firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository
 
 const initialCandidatos = await firebaseCandidate.findAllActive() ?? []
 
-export default function CriarVotacao() {
+export default function CriarEleicao() {
   return (
     <main className="signup-candidate-page">
-      <h1>Criar Votação</h1>
+      <h1>Criar Eleição</h1>
       <EleicaoProvider initialCandidatos={initialCandidatos} isEditing={false}>
         <EleicaoForm />
       </EleicaoProvider>

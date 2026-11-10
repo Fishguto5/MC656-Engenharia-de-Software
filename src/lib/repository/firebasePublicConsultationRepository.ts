@@ -2,12 +2,11 @@ import { ConsultaPublica } from '@/interfaces/eleicaoInterfaces'
 import { collection, doc, updateDoc, getDoc, addDoc, Timestamp, serverTimestamp, setDoc } from 'firebase/firestore'
 import { firestore } from '../firebase'
 import { publicConsultationAdapter, PublicConsultationRawDocument } from '../adapter/firebasePublicConsultationAdapter'
-import { ConsultaPublicaDocument } from '@/interfaces/firebaseInterfaces'
+import { ConsultaPublicaDocument, ElectionStatus, LocalConsulta } from '@/interfaces/firebaseInterfaces'
 import { omitId } from '../utils/omitId'
 import { isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { validateDraft } from '@/schemas/electionDraftSchema'
-
-export const ELECTION_COLLECTION = 'eleicoes'
+import { ELECTION_COLLECTION } from '../constants/election'
 
 class FirebasePublicConsultationRepository {
   // async findAll(): Promise<ConsultaPublica[]> {}
@@ -32,6 +31,39 @@ class FirebasePublicConsultationRepository {
       console.error(`Consulta Publica com ID ${id} possui dados inválidos ou incompletos:`, error)
       return null
     }
+  }
+
+  async findDraftById(id: string): Promise<Partial<ConsultaPublica> | null> {
+    const publicConsultationRef = doc(firestore, ELECTION_COLLECTION, id)
+    const snapshot = await getDoc(publicConsultationRef)
+
+    if (!snapshot.exists()) {
+      return null
+    }
+
+    const data = snapshot.data()
+
+    // Helper para verificar se o valor é válido (não é null, undefined nem string vazia)
+    const hasValue = (val: unknown): boolean => {
+      return val !== null && val !== undefined && val !== ''
+    }
+
+    const draft: Partial<ConsultaPublica> = {
+      id: snapshot.id,
+      ...(hasValue(data.title) && { title: data.title }),
+      ...(hasValue(data.description) && { description: data.description }),
+      ...(hasValue(data.status) && { status: data.status as ElectionStatus }),
+      ...(hasValue(data.type) && { type: data.type }),
+      ...(hasValue(data.local) && { local: data.local as LocalConsulta }),
+      ...(hasValue(data.sim) && { sim: data.sim }),
+      ...(hasValue(data.nao) && { nao: data.nao }),
+      ...(hasValue(data.startsAt) && { startsAt: RawDocumentTimeToDate(data.startsAt) }),
+      ...(hasValue(data.endsAt) && { endsAt: RawDocumentTimeToDate(data.endsAt) }),
+      ...(hasValue(data.createdAt) && { createdAt: RawDocumentTimeToDate(data.createdAt) }),
+      ...(hasValue(data.updatedAt) && { updatedAt: RawDocumentTimeToDate(data.updatedAt) }),
+    }
+
+    return draft
   }
 
   async create(domain: ConsultaPublica): Promise<void> {
@@ -102,8 +134,13 @@ class FirebasePublicConsultationRepository {
     const currentId = docRef.id
 
     const draftData: Record<string, unknown> = {
+      title: domain.title ?? null,
+      description: domain.description ?? null,
+      startsAt: startsAtDate ? Timestamp.fromDate(startsAtDate) : null,
+      endsAt: endsAtDate ? Timestamp.fromDate(endsAtDate) : null,
       status: 'draft',
       type: 'public-consultation',
+      local: domain.local ?? null,
       sim: domain.sim ?? 0,
       nao: domain.nao ?? 0,
       updatedAt: serverTimestamp(),
@@ -112,12 +149,6 @@ class FirebasePublicConsultationRepository {
     if (!draftId) {
       draftData.createdAt = serverTimestamp()
     }
-
-    if (domain.title !== undefined) draftData.title = domain.title
-    if (domain.description !== undefined) draftData.description = domain.description
-    if (startsAtDate !== undefined) draftData.startsAt = Timestamp.fromDate(startsAtDate)
-    if (endsAtDate !== undefined) draftData.endsAt = Timestamp.fromDate(endsAtDate)
-    if (domain.local !== undefined) draftData.local = domain.local
 
     try {
       await setDoc(docRef, draftData, { merge: true })

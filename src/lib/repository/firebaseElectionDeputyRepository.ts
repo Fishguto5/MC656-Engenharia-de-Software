@@ -3,14 +3,13 @@ import { firestore } from '../firebase'
 import { getDateYearsAgo, isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { omitId } from '../utils/omitId'
 import { EleicaoDeputado } from '@/interfaces/eleicaoInterfaces'
-import { EleicaoDeputadoDocument } from '@/interfaces/firebaseInterfaces'
+import { ElectionStatus, EleicaoDeputadoDocument } from '@/interfaces/firebaseInterfaces'
 import { DeputyRawDocument, deputyAdapter } from '../adapter/firebaseDeputyAdapter'
 import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
-import { ELECTION_COLLECTION } from './firebasePublicConsultationRepository'
 import { validateDraft } from '@/schemas/electionDraftSchema'
+import { ELECTION_COLLECTION, MINIMUM_DEPUTY_AGE } from '../constants/election'
+import { UF } from '../deputado'
 
-/* Idade mínima para Deputado = 21 anos (art. 14, § 3º, VI, c da CF) */
-export const MINIMUM_DEPUTY_AGE = 21
 export const maxDeputyDoB = () => getDateYearsAgo(MINIMUM_DEPUTY_AGE)
 
 class FirebaseDeputyRepository {
@@ -39,6 +38,48 @@ class FirebaseDeputyRepository {
       console.error(`Eleição para deputado com ID ${id} possui dados inválidos:`, error)
       return null
     }
+  }
+
+  async findDraftById(id: string): Promise<Partial<EleicaoDeputado> | null> {
+    const deputyRef = doc(firestore, ELECTION_COLLECTION, id)
+    const snapshot = await getDoc(deputyRef)
+
+    if (!snapshot.exists()) {
+      return null
+    }
+
+    const data = snapshot.data()
+
+    // Helper para verificar se o valor está preenchido
+    const hasValue = (val: unknown): boolean => {
+      return val !== null && val !== undefined && val !== ''
+    }
+
+    const draft: Partial<EleicaoDeputado> = {
+      id: snapshot.id,
+      ...(hasValue(data.title) && { title: data.title }),
+      ...(hasValue(data.description) && { description: data.description }),
+      ...(hasValue(data.status) && { status: data.status as ElectionStatus }),
+      ...(hasValue(data.type) && { type: data.type }),
+      ...(hasValue(data.uf) && { uf: data.uf as UF }),
+      ...(hasValue(data.agremiacoes) && { agremiacoes: data.agremiacoes }),
+      ...(hasValue(data.votosLegenda) && { votosLegenda: data.votosLegenda }),
+      ...(hasValue(data.votosBrancos) && { votosBrancos: data.votosBrancos }),
+      ...(hasValue(data.votosNulos) && { votosNulos: data.votosNulos }),
+      ...(hasValue(data.startsAt) && { startsAt: RawDocumentTimeToDate(data.startsAt) }),
+      ...(hasValue(data.endsAt) && { endsAt: RawDocumentTimeToDate(data.endsAt) }),
+      ...(hasValue(data.createdAt) && { createdAt: RawDocumentTimeToDate(data.createdAt) }),
+      ...(hasValue(data.updatedAt) && { updatedAt: RawDocumentTimeToDate(data.updatedAt) }),
+      candidatos: [],
+    }
+
+    // Busca candidatos salvos na subcoleção de rascunho (se houver)
+    const candidatos = await firebaseVotesCandidate.findByElectionId(id, ELECTION_COLLECTION)
+    if (candidatos && candidatos.length > 0) {
+      draft.candidatos = candidatos
+    }
+
+    return draft
   }
 
   async create(domain: EleicaoDeputado): Promise<void> {
@@ -150,8 +191,13 @@ class FirebaseDeputyRepository {
     }
 
     const draftData: Record<string, unknown> = {
+      title: domain.title ?? null,
+      description: domain.description ?? null,
+      startsAt: startsAtDate ? Timestamp.fromDate(startsAtDate) : null,
+      endsAt: endsAtDate ? Timestamp.fromDate(endsAtDate) : null,
       status: 'draft',
       type: 'deputy',
+      uf: domain.uf ?? null,
       agremiacoes: Array.from(agremiacoesSet),
       votosLegenda: domain.votosLegenda ?? votosLegendaInicial,
       votosBrancos: domain.votosBrancos ?? 0,
@@ -162,12 +208,6 @@ class FirebaseDeputyRepository {
     if (!draftId) {
       draftData.createdAt = serverTimestamp()
     }
-
-    if (domain.title !== undefined) draftData.title = domain.title
-    if (domain.description !== undefined) draftData.description = domain.description
-    if (startsAtDate !== undefined) draftData.startsAt = Timestamp.fromDate(startsAtDate)
-    if (endsAtDate !== undefined) draftData.endsAt = Timestamp.fromDate(endsAtDate)
-    if (domain.uf !== undefined) draftData.uf = domain.uf
 
     try {
       await setDoc(docRef, draftData, { merge: true })

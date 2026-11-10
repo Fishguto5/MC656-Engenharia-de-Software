@@ -6,14 +6,8 @@ import { getDateYearsAgo } from '../utils/date'
 import { MINIMUM_DEPUTY_AGE } from './firebaseElectionDeputyRepository'
 import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
 import { omitId } from '../utils/omitId'
+import { MINIMUM_AGE, CANDIDATES_COLLECTION } from '../constants/election'
 
-export const CANDIDATES_COLLECTION = 'candidatos'
-
-/* Idade mínima para Deputado = 21 anos
- * Idade mínima para Presidente = 35 anos
- * A lógica de eleição verifica a idade para presidente
-*/
-export const MINIMUM_AGE = MINIMUM_DEPUTY_AGE
 export const maxCandidateDoB = () => {
   return getDateYearsAgo(MINIMUM_AGE)
 }
