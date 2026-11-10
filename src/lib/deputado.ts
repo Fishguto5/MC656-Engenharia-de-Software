@@ -1,6 +1,19 @@
 // Soma dos votos nominais. Votos em branco e nulos não são computados
 
-import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
+import {
+  EleicaoDeputado,
+  ResultadoAgremiacao,
+  ResultadoDeputado,
+  VotosCandidato,
+  VotosLegenda,
+} from '@/interfaces/eleicaoInterfaces'
+import {
+  VOTACAO_MINIMA_AGREMIACAO_SOBRAS,
+  VOTACAO_MINIMA_CANDIDATO,
+  VOTACAO_MINIMA_CANDIDATO_SOBRAS,
+} from './constants/election'
+
+export type { EleicaoDeputado, ResultadoAgremiacao, ResultadoDeputado, VotosCandidato, VotosLegenda }
 
 // (CF, art. 77, § 2º; Lei 9.504/97, art. 2º).
 export function somarVotos(candidatos: VotosCandidato[]): number {
@@ -33,62 +46,10 @@ export function ordenarPorVotacao(candidatos: VotosCandidato[]): VotosCandidato[
   return [...candidatos].sort(compararPorVotacao)
 }
 
-// Percentuais do quociente eleitoral (QE) exigidos pelo Código Eleitoral.
-// Art. 108: votação nominal mínima do VotosCandidato para ser eleito pelo quociente.
-export const VOTACAO_MINIMA_CANDIDATO = 10
-// Art. 109, § 2º: votação mínima do partido/federação para disputar as sobras...
-export const VOTACAO_MINIMA_AGREMIACAO_SOBRAS = 80
-// ...e do VotosCandidato que vai ocupar a vaga (só na primeira fase das sobras).
-export const VOTACAO_MINIMA_CANDIDATO_SOBRAS = 20
-
-// Vagas de Deputado Federal por circunscrição nas Eleições 2026 (LC 78/1993).
-// O STF manteve as 513 cadeiras e o projeto que criava 531 foi vetado.
-// CF, art. 45, § 1º: mínimo de 8 e máximo de 70 por unidade da federação.
-export const LISTA_UFS = [
-  'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO',
-  'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR',
-  'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
-] as const
-
-export type UF = typeof LISTA_UFS[number]
-
-export const VAGAS_DEPUTADO_FEDERAL: Record<UF, number> = {
-  AC: 8,
-  AL: 9,
-  AM: 8,
-  AP: 8,
-  BA: 39,
-  CE: 22,
-  DF: 8,
-  ES: 10,
-  GO: 17,
-  MA: 18,
-  MG: 53,
-  MS: 8,
-  MT: 8,
-  PA: 17,
-  PB: 12,
-  PE: 25,
-  PI: 10,
-  PR: 30,
-  RJ: 46,
-  RN: 8,
-  RO: 8,
-  RR: 8,
-  RS: 31,
-  SC: 16,
-  SE: 8,
-  SP: 70,
-  TO: 8,
-} as const
-
 // Nome da agremiação (partido ou federação) pela qual o VotosCandidato concorre.
 export function agremiacaoDe(VotosCandidato: VotosCandidato): string {
   return VotosCandidato.federacao ?? VotosCandidato.partido
 }
-
-// Votos de legenda por agremiação, já validados por `criarVotosLegenda`.
-export type VotosLegenda = ReadonlyMap<string, number>
 
 // Rejeita agremiações desconhecidas, duplicadas e quantidades inválidas.
 export function criarVotosLegenda(
@@ -96,55 +57,20 @@ export function criarVotosLegenda(
   entradas: readonly (readonly [string, number])[],
 ): VotosLegenda {
   const validas = new Set(agremiacoes)
-  const votos = new Map<string, number>()
+  const votos: Record<string, number> = {}
 
   for (const [nome, quantidade] of entradas) {
     if (!validas.has(nome)) {
       throw new RangeError(`Agremiação desconhecida: ${nome}`)
     }
-    if (votos.has(nome)) {
+    if (Object.prototype.hasOwnProperty.call(votos, nome)) {
       throw new RangeError(`Votos de legenda duplicados: ${nome}`)
     }
     validarVotos([quantidade])
-    votos.set(nome, quantidade)
+    votos[nome] = quantidade
   }
 
   return votos
-}
-
-// Eleição proporcional de uma circunscrição (Deputado Federal, Estadual ou
-// Distrital). `vagas` é o número de cadeiras em disputa. `agremiacoes` é o
-// conjunto válido da circunscrição (nomes de partidos ou federações).
-export type VotacaoDeputado = {
-  id: string
-  data: Date
-  vagas: number
-  agremiacoes: readonly string[]
-  candidatos: VotosCandidato[]
-  votosLegenda: VotosLegenda
-  votosBrancos: number
-  votosNulos: number
-}
-
-export type ResultadoAgremiacao = {
-  agremiacao: string
-  votosNominais: number
-  votosLegenda: number
-  votosValidos: number
-  quocientePartidario: number
-  // Cadeiras preenchidas na primeira etapa (quociente partidário).
-  vagasQuociente: number
-  // Cadeiras conquistadas na distribuição das sobras (maiores médias).
-  vagasSobras: number
-  eleitos: VotosCandidato[]
-}
-
-export type ResultadoDeputado = {
-  votosValidos: number
-  quocienteEleitoral: number
-  agremiacoes: ResultadoAgremiacao[]
-  // Todos os eleitos, em ordem decrescente de votação nominal.
-  eleitos: VotosCandidato[]
 }
 
 type Agremiacao = {
@@ -186,40 +112,47 @@ function atingePercentual(votos: number, percentual: number, quocienteEleitoral:
   return votos * 100 >= quocienteEleitoral * percentual
 }
 
-function validarVotacaoDeputado(votacao: VotacaoDeputado): void {
-  if (!Number.isInteger(votacao.vagas) || votacao.vagas <= 0) {
+function validarEleicaoDeputado(eleicao: EleicaoDeputado, vagas: number): void {
+  if (!Number.isInteger(vagas) || vagas <= 0) {
     throw new RangeError('O número de vagas deve ser um inteiro positivo.')
   }
 
-  const validas = new Set(votacao.agremiacoes)
+  const validas = new Set(eleicao.agremiacoes)
 
-  for (const VotosCandidato of votacao.candidatos) {
+  for (const VotosCandidato of eleicao.candidatos) {
     if (!validas.has(agremiacaoDe(VotosCandidato))) {
       throw new RangeError(`VotosCandidato ${VotosCandidato.id} de agremiação desconhecida: ${agremiacaoDe(VotosCandidato)}`)
     }
   }
 
-  // `VotosLegenda` é só um tipo: o Map pode ter sido montado sem `criarVotosLegenda`.
-  for (const nome of votacao.votosLegenda.keys()) {
+  const votosLegendaRecord = eleicao.votosLegenda instanceof Map
+    ? Object.fromEntries(eleicao.votosLegenda)
+    : eleicao.votosLegenda
+
+  for (const nome of Object.keys(votosLegendaRecord)) {
     if (!validas.has(nome)) {
       throw new RangeError(`Agremiação desconhecida: ${nome}`)
     }
   }
 
   validarVotos([
-    ...votacao.candidatos.map(c => c.votos),
-    ...votacao.votosLegenda.values(),
-    votacao.votosBrancos,
-    votacao.votosNulos,
+    ...eleicao.candidatos.map(c => c.votos),
+    ...(Object.values(votosLegendaRecord) as number[]),
+    eleicao.votosBrancos,
+    eleicao.votosNulos,
   ])
 }
 
-function agrupar(votacao: VotacaoDeputado): Agremiacao[] {
+function agrupar(eleicao: EleicaoDeputado): Agremiacao[] {
+  const votosLegendaRecord = eleicao.votosLegenda instanceof Map
+    ? Object.fromEntries(eleicao.votosLegenda)
+    : eleicao.votosLegenda
+
   const mapa = new Map<string, Agremiacao>(
-    votacao.agremiacoes.map(nome => [nome, {
+    eleicao.agremiacoes.map(nome => [nome, {
       nome,
       votosNominais: 0,
-      votosLegenda: votacao.votosLegenda.get(nome) ?? 0,
+      votosLegenda: votosLegendaRecord[nome] ?? 0,
       votosValidos: 0,
       quocientePartidario: 0,
       vagasObtidas: 0,
@@ -229,7 +162,7 @@ function agrupar(votacao: VotacaoDeputado): Agremiacao[] {
     }]),
   )
 
-  for (const VotosCandidato of votacao.candidatos) {
+  for (const VotosCandidato of eleicao.candidatos) {
     mapa.get(agremiacaoDe(VotosCandidato))!.candidatos.push(VotosCandidato)
   }
 
@@ -349,10 +282,10 @@ function paraResultado(agremiacao: Agremiacao): ResultadoAgremiacao {
 
 // Apuração completa da eleição proporcional. Votos válidos = votos nominais
 // mais votos de legenda; brancos e nulos não entram (Lei 9.504/97, art. 5º).
-export function apurarDeputados(votacao: VotacaoDeputado): ResultadoDeputado {
-  validarVotacaoDeputado(votacao)
+export function apurarDeputados(eleicao: EleicaoDeputado, vagas: number): ResultadoDeputado {
+  validarEleicaoDeputado(eleicao, vagas)
 
-  const agremiacoes = agrupar(votacao)
+  const agremiacoes = agrupar(eleicao)
   const votosValidos = agremiacoes.reduce((acc, a) => acc + a.votosValidos, 0)
 
   if (votosValidos === 0) {
@@ -364,10 +297,10 @@ export function apurarDeputados(votacao: VotacaoDeputado): ResultadoDeputado {
     }
   }
 
-  const quocienteEleitoral = calcularQuocienteEleitoral(votosValidos, votacao.vagas)
+  const quocienteEleitoral = calcularQuocienteEleitoral(votosValidos, vagas)
 
-  distribuirPorQuociente(agremiacoes, quocienteEleitoral, votacao.vagas)
-  distribuirSobras(agremiacoes, quocienteEleitoral, votacao.vagas)
+  distribuirPorQuociente(agremiacoes, quocienteEleitoral, vagas)
+  distribuirSobras(agremiacoes, quocienteEleitoral, vagas)
 
   return {
     votosValidos,
@@ -377,6 +310,6 @@ export function apurarDeputados(votacao: VotacaoDeputado): ResultadoDeputado {
   }
 }
 
-export function getDeputadosEleitos(votacao: VotacaoDeputado): VotosCandidato[] {
-  return apurarDeputados(votacao).eleitos
+export function getDeputadosEleitos(eleicao: EleicaoDeputado, vagas: number): VotosCandidato[] {
+  return apurarDeputados(eleicao, vagas).eleitos
 }

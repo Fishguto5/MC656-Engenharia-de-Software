@@ -1,5 +1,5 @@
-import { UF } from '@/lib/deputado'
-import { ElectionStatus, ElectionType, LocalConsulta } from './firebaseInterfaces'
+import { ElectionType, UF } from '@/lib/constants/election'
+import { ElectionStatus, LocalConsulta } from './firebaseInterfaces'
 
 // Candidato
 export interface Candidato {

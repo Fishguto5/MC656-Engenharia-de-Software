@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { ElectionStatus, ElectionType, LocalConsulta } from '@/interfaces/firebaseInterfaces'
+import { ElectionStatus, LocalConsulta } from '@/interfaces/firebaseInterfaces'
 import { Candidato, ConsultaPublica, EleicaoDeputado, EleicaoPresidente, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { InputDateToDate, RawDocumentTimeToDate } from '@/lib/utils/date'
 import { useRouter } from 'next/navigation'
-import { UF } from '@/lib/deputado'
 import { firebaseElection } from '@/lib/repository/FirebaseElectionFacade'
+import { ElectionType, UF } from '@/lib/constants/election'
 
 export interface FormElectionData {
   title: string

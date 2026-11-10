@@ -1,13 +1,12 @@
-import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
+import { EleicaoDeputado, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
+import { VAGAS_DEPUTADO_FEDERAL } from '@/lib/constants/election'
 import {
-  type VotacaoDeputado,
   agremiacaoDe,
   apurarDeputados,
   calcularQuocienteEleitoral,
   calcularQuocientePartidario,
   criarVotosLegenda,
   getDeputadosEleitos,
-  VAGAS_DEPUTADO_FEDERAL,
 } from '@/lib/deputado'
 import { describe, expect, it } from 'vitest'
 
@@ -17,18 +16,25 @@ function criarCandidato(id: string, partido: string, votos: number, extra: Parti
 
 // Por padrao, o conjunto de agremiacoes validas e derivado dos candidatos e das
 // chaves de legenda. Passe `agremiacoes` para forcar um conjunto especifico.
-function criarVotacao(
-  vagas: number,
+function criarEleicao(
   candidatos: VotosCandidato[],
   votosLegenda: Record<string, number> = {},
   votosBrancos = 0,
   votosNulos = 0,
   agremiacoes: string[] = [...new Set([...candidatos.map(agremiacaoDe), ...Object.keys(votosLegenda)])],
-): VotacaoDeputado {
+): EleicaoDeputado {
+  const agora = new Date('2026-10-04')
   return {
     id: 'deputado-federal-2026',
-    data: new Date('2026-10-04'),
-    vagas,
+    title: 'Eleição para Deputado Federal 2026',
+    description: 'Eleição proporcional',
+    startsAt: agora,
+    endsAt: agora,
+    status: 'closed',
+    createdAt: agora,
+    updatedAt: agora,
+    type: 'deputy',
+    uf: 'SP',
     agremiacoes,
     candidatos,
     votosLegenda: criarVotosLegenda(agremiacoes, Object.entries(votosLegenda)),
@@ -101,16 +107,16 @@ describe('agremiacaoDe', () => {
 describe('criarVotosLegenda', () => {
   const agremiacoes = ['PL', 'PT', 'Federacao Alfa']
 
-  it('cria o mapa com os votos informados', () => {
+  it('cria o record com os votos informados', () => {
     const votos = criarVotosLegenda(agremiacoes, [['PL', 15_000], ['Federacao Alfa', 22_000]])
 
-    expect(votos.get('PL')).toBe(15_000)
-    expect(votos.get('Federacao Alfa')).toBe(22_000)
-    expect(votos.get('PT')).toBeUndefined()
+    expect(votos['PL']).toBe(15_000)
+    expect(votos['Federacao Alfa']).toBe(22_000)
+    expect(votos['PT']).toBeUndefined()
   })
 
   it('aceita lista vazia', () => {
-    expect(criarVotosLegenda(agremiacoes, []).size).toBe(0)
+    expect(Object.keys(criarVotosLegenda(agremiacoes, [])).length).toBe(0)
   })
 
   it('rejeita agremiacao desconhecida', () => {
@@ -148,9 +154,9 @@ describe('apurarDeputados - eleicao com quociente, clausula de 10% e sobras', ()
     criarCandidato('d2', 'PD', 500),
   ]
   const votosLegenda = { 'Federacao Alfa': 6_500, 'PB': 9_600, 'PC': 3_600, 'PD': 1_000 }
-  const votacao = criarVotacao(8, candidatos, votosLegenda, 3_000, 2_000)
+  const eleicao = criarEleicao(candidatos, votosLegenda, 3_000, 2_000)
 
-  const res = apurarDeputados(votacao)
+  const res = apurarDeputados(eleicao, 8)
   const porNome = (nome: string) => res.agremiacoes.find(a => a.agremiacao === nome)
 
   it('calcula votos validos e quociente eleitoral sem contar brancos e nulos', () => {
@@ -197,7 +203,7 @@ describe('apurarDeputados - eleicao com quociente, clausula de 10% e sobras', ()
   })
 
   it('getDeputadosEleitos retorna apenas os eleitos', () => {
-    expect(getDeputadosEleitos(votacao)).toEqual(res.eleitos)
+    expect(getDeputadosEleitos(eleicao, 8)).toEqual(res.eleitos)
   })
 })
 
@@ -205,7 +211,7 @@ describe('apurarDeputados - votacao minima de 10% do quociente eleitoral', () =>
   it('candidato com exatamente 10% do QE ocupa a vaga de quociente', () => {
     // 20.000 votos validos / 2 vagas = QE 10.000; 10% = 1.000 votos.
     const candidatos = [criarCandidato('c1', 'P', 5_000), criarCandidato('c2', 'P', 1_000)]
-    const res = apurarDeputados(criarVotacao(2, candidatos, { P: 14_000 }))
+    const res = apurarDeputados(criarEleicao(candidatos, { P: 14_000 }), 2)
 
     expect(res.quocienteEleitoral).toBe(10_000)
     expect(res.agremiacoes[0].vagasQuociente).toBe(2)
@@ -215,7 +221,7 @@ describe('apurarDeputados - votacao minima de 10% do quociente eleitoral', () =>
   it('candidato com menos de 10% do QE nao ocupa vaga de quociente', () => {
     // 19.999 votos validos / 2 vagas = QE 9.999; 10% = 999,9 votos.
     const candidatos = [criarCandidato('c1', 'P', 5_000), criarCandidato('c2', 'P', 999)]
-    const res = apurarDeputados(criarVotacao(2, candidatos, { P: 14_000 }))
+    const res = apurarDeputados(criarEleicao(candidatos, { P: 14_000 }), 2)
 
     expect(res.quocienteEleitoral).toBe(9_999)
     expect(res.agremiacoes[0].vagasQuociente).toBe(1)
@@ -235,7 +241,7 @@ describe('apurarDeputados - nenhum partido atinge o quociente eleitoral', () => 
   const votosLegenda = { P1: 100, P2: 300, P3: 500, P4: 700 }
 
   it('distribui as cadeiras por maior media, sem cair na regra dos mais votados', () => {
-    const res = apurarDeputados(criarVotacao(3, candidatos, votosLegenda))
+    const res = apurarDeputados(criarEleicao(candidatos, votosLegenda), 3)
 
     expect(res.quocienteEleitoral).toBe(1_333)
     expect(res.agremiacoes.every(a => a.quocientePartidario === 0)).toBe(true)
@@ -249,7 +255,7 @@ describe('apurarDeputados - desempates', () => {
     const jovem = criarCandidato('jovem', 'P', 500, { dataNascimento: new Date('1990-01-01') })
     const idoso = criarCandidato('idoso', 'P', 500, { dataNascimento: new Date('1962-09-12') })
 
-    const res = apurarDeputados(criarVotacao(1, [jovem, idoso]))
+    const res = apurarDeputados(criarEleicao([jovem, idoso]), 1)
 
     expect(ids(res.eleitos)).toEqual(['idoso'])
   })
@@ -257,7 +263,7 @@ describe('apurarDeputados - desempates', () => {
 
 describe('apurarDeputados - casos limite', () => {
   it('sem votos validos ninguem e eleito', () => {
-    const res = apurarDeputados(criarVotacao(5, [criarCandidato('c1', 'P', 0)], {}, 100, 50))
+    const res = apurarDeputados(criarEleicao([criarCandidato('c1', 'P', 0)], {}, 100, 50), 5)
 
     expect(res.votosValidos).toBe(0)
     expect(res.quocienteEleitoral).toBe(0)
@@ -265,7 +271,7 @@ describe('apurarDeputados - casos limite', () => {
   })
 
   it('cadeiras sem candidatos suficientes ficam vagas', () => {
-    const res = apurarDeputados(criarVotacao(3, [criarCandidato('c1', 'P', 900)]))
+    const res = apurarDeputados(criarEleicao([criarCandidato('c1', 'P', 900)]), 3)
 
     expect(res.quocienteEleitoral).toBe(300)
     expect(res.agremiacoes[0].quocientePartidario).toBe(3)
@@ -273,15 +279,15 @@ describe('apurarDeputados - casos limite', () => {
   })
 
   it('votos de legenda de um partido sem candidatos entram nos votos validos', () => {
-    const res = apurarDeputados(criarVotacao(1, [criarCandidato('c1', 'P', 100)], { Q: 100 }))
+    const res = apurarDeputados(criarEleicao([criarCandidato('c1', 'P', 100)], { Q: 100 }), 1)
 
     expect(res.votosValidos).toBe(200)
     expect(res.agremiacoes).toHaveLength(2)
   })
 
   it('agremiacao valida sem candidatos nem votos aparece no resultado com zeros', () => {
-    const votacao = criarVotacao(1, [criarCandidato('c1', 'P', 100)], {}, 0, 0, ['P', 'Q'])
-    const res = apurarDeputados(votacao)
+    const eleicao = criarEleicao([criarCandidato('c1', 'P', 100)], {}, 0, 0, ['P', 'Q'])
+    const res = apurarDeputados(eleicao, 1)
     const q = res.agremiacoes.find(a => a.agremiacao === 'Q')
 
     expect(res.agremiacoes).toHaveLength(2)
@@ -290,53 +296,63 @@ describe('apurarDeputados - casos limite', () => {
   })
 
   it('rejeita numero de vagas invalido', () => {
-    expect(() => apurarDeputados(criarVotacao(0, []))).toThrow(RangeError)
+    expect(() => apurarDeputados(criarEleicao([]), 0)).toThrow(RangeError)
   })
 
   it('rejeita quantidade de votos invalida', () => {
-    expect(() => apurarDeputados(criarVotacao(2, [criarCandidato('c1', 'P', -1)]))).toThrow(RangeError)
-    expect(() => apurarDeputados(criarVotacao(2, [], { P: -5 }))).toThrow(RangeError)
-    expect(() => apurarDeputados(criarVotacao(2, [], {}, -1))).toThrow(RangeError)
+    expect(() => apurarDeputados(criarEleicao([criarCandidato('c1', 'P', -1)]), 2)).toThrow(RangeError)
+    expect(() => apurarDeputados(criarEleicao([], { P: -5 }), 2)).toThrow(RangeError)
+    expect(() => apurarDeputados(criarEleicao([], {}, -1), 2)).toThrow(RangeError)
   })
 
   it('rejeita quociente eleitoral inconsistente com as vagas', () => {
     // 20 votos para 8 vagas: QE = 2 e o partido teria 10 vagas por quociente.
-    expect(() => apurarDeputados(criarVotacao(8, [criarCandidato('c1', 'P', 20)]))).toThrow(RangeError)
+    expect(() => apurarDeputados(criarEleicao([criarCandidato('c1', 'P', 20)]), 8)).toThrow(RangeError)
   })
 })
 
 describe('apurarDeputados - validacao das agremiacoes', () => {
   it('rejeita candidato de agremiacao fora do conjunto valido', () => {
-    const votacao = criarVotacao(2, [criarCandidato('c1', 'P', 100)], {}, 0, 0, ['Q'])
+    const eleicao = criarEleicao([criarCandidato('c1', 'P', 100)], {}, 0, 0, ['Q'])
 
-    expect(() => apurarDeputados(votacao)).toThrow(RangeError)
-    expect(() => apurarDeputados(votacao)).toThrow('c1')
+    expect(() => apurarDeputados(eleicao, 2)).toThrow(RangeError)
+    expect(() => apurarDeputados(eleicao, 2)).toThrow('c1')
   })
 
   it('candidato de federacao e validado pelo nome da federacao, nao do partido', () => {
     const candidato = criarCandidato('c1', 'PT', 100, { federacao: 'Federacao Alfa' })
 
-    expect(() => apurarDeputados(criarVotacao(1, [candidato], {}, 0, 0, ['PT']))).toThrow(RangeError)
-    expect(() => apurarDeputados(criarVotacao(1, [candidato], {}, 0, 0, ['Federacao Alfa']))).not.toThrow()
+    expect(() => apurarDeputados(criarEleicao([candidato], {}, 0, 0, ['PT']), 1)).toThrow(RangeError)
+    expect(() => apurarDeputados(criarEleicao([candidato], {}, 0, 0, ['Federacao Alfa']), 1)).not.toThrow()
   })
 
   it('regressao: chave de legenda digitada errada nao cria agremiacao fantasma', () => {
-    // Um Map montado a mao, sem passar por criarVotosLegenda, tambem e rejeitado.
-    const votacao: VotacaoDeputado = {
-      ...criarVotacao(1, [criarCandidato('c1', 'PT', 100)]),
-      votosLegenda: new Map([['PTT', 5_000]]),
+    // Um Record montado a mao, sem passar por criarVotosLegenda, tambem e rejeitado.
+    const eleicao: EleicaoDeputado = {
+      ...criarEleicao([criarCandidato('c1', 'PT', 100)]),
+      votosLegenda: { PTT: 5_000 },
     }
 
-    expect(() => apurarDeputados(votacao)).toThrow(RangeError)
-    expect(() => apurarDeputados(votacao)).toThrow('PTT')
+    expect(() => apurarDeputados(eleicao, 1)).toThrow(RangeError)
+    expect(() => apurarDeputados(eleicao, 1)).toThrow('PTT')
   })
 
-  it('rejeita voto de legenda invalido mesmo em Map montado a mao', () => {
-    const votacao: VotacaoDeputado = {
-      ...criarVotacao(1, [criarCandidato('c1', 'PT', 100)]),
-      votosLegenda: new Map([['PT', -1]]),
+  it('rejeita voto de legenda invalido mesmo em Record montado a mao', () => {
+    const eleicao: EleicaoDeputado = {
+      ...criarEleicao([criarCandidato('c1', 'PT', 100)]),
+      votosLegenda: { PT: -1 },
     }
 
-    expect(() => apurarDeputados(votacao)).toThrow(RangeError)
+    expect(() => apurarDeputados(eleicao, 1)).toThrow(RangeError)
+  })
+
+  it('funciona corretamente quando votosLegenda e um ReadonlyMap', () => {
+    const eleicao: EleicaoDeputado = {
+      ...criarEleicao([criarCandidato('c1', 'PT', 100)]),
+      votosLegenda: new Map([['PT', 50]]),
+    }
+
+    const res = apurarDeputados(eleicao, 1)
+    expect(res.votosValidos).toBe(150)
   })
 })

@@ -1,6 +1,6 @@
 import styles from './EleicaoForm.module.css'
 import { useEleicao } from './EleicaoContext'
-import { LISTA_UFS } from '@/lib/deputado'
+import { LISTA_UFS } from '@/lib/constants/election'
 
 export default function ConsultaPublicaForm() {
   const { formData, handleFieldChange } = useEleicao()

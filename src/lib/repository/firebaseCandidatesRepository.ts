@@ -5,7 +5,8 @@ import { firestore } from '../firebase'
 import { getDateYearsAgo } from '../utils/date'
 import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
 import { omitId } from '../utils/omitId'
-import { MINIMUM_AGE, CANDIDATES_COLLECTION } from '../constants/election'
+import { MINIMUM_AGE } from '../constants/election'
+import { CANDIDATES_COLLECTION } from '../constants/firebase'
 
 export const maxCandidateDoB = () => {
   return getDateYearsAgo(MINIMUM_AGE)

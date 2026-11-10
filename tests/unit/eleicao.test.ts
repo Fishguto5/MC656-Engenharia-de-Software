@@ -1,34 +1,45 @@
-import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import {
-  type VotacaoPresidente,
-  type ConsultaPublica,
-  precisaSegundoTurno,
-  resultadoConsultaPublica,
+  ConsultaPublica,
+  EleicaoPresidente,
+  VotosCandidato,
+} from '@/interfaces/eleicaoInterfaces'
+import {
   getCandidatosSegundoTurno,
   getResultadoPrimeiroTurno,
+  precisaSegundoTurno,
+  resultadoConsultaPublica,
 } from '@/lib/eleicao'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 describe('precisaSegundoTurno', () => {
-  let votacao: VotacaoPresidente
+  let eleicao: EleicaoPresidente
 
   beforeEach(() => {
-    votacao = {
+    const agora = new Date()
+    eleicao = {
       id: '',
-      data: new Date(),
+      title: '',
+      description: '',
+      startsAt: agora,
+      endsAt: agora,
+      status: 'closed',
+      createdAt: agora,
+      updatedAt: agora,
+      type: 'president',
+      turno: 1,
       candidatos: [],
       votosBrancos: 0,
       votosNulos: 0,
     }
   })
 
-  it('votacao vazia', () => {
-    const res = precisaSegundoTurno(votacao)
+  it('eleicao vazia', () => {
+    const res = precisaSegundoTurno(eleicao)
     expect(res).toBe(false)
   })
 
-  it('votacao com um candidato', () => {
-    votacao.candidatos = [{
+  it('eleicao com um candidato', () => {
+    eleicao.candidatos = [{
       id: '',
       nome: '',
       partido: '',
@@ -37,53 +48,62 @@ describe('precisaSegundoTurno', () => {
       dataNascimento: new Date(),
     }]
 
-    const res = precisaSegundoTurno(votacao)
+    const res = precisaSegundoTurno(eleicao)
     expect(res).toBe(false)
   })
 
-  it('votacao com tres candidatos sem segundo turno', () => {
-    votacao.candidatos = [
+  it('eleicao com tres candidatos sem segundo turno', () => {
+    eleicao.candidatos = [
       { id: '', nome: '', partido: '', numero: 13, votos: 30, dataNascimento: new Date() },
       { id: '', nome: '', partido: '', numero: 22, votos: 19, dataNascimento: new Date() },
       { id: '', nome: '', partido: '', numero: 45, votos: 51, dataNascimento: new Date() },
     ]
 
-    const res = precisaSegundoTurno(votacao)
+    const res = precisaSegundoTurno(eleicao)
     expect(res).toBe(false)
   })
 
-  it('votacao com tres candidatos com segundo turno', () => {
-    votacao.candidatos = [
+  it('eleicao com tres candidatos com segundo turno', () => {
+    eleicao.candidatos = [
       { id: '', nome: '', partido: '', numero: 13, votos: 30, dataNascimento: new Date() },
       { id: '', nome: '', partido: '', numero: 22, votos: 20, dataNascimento: new Date() },
       { id: '', nome: '', partido: '', numero: 45, votos: 50, dataNascimento: new Date() },
     ]
 
-    const res = precisaSegundoTurno(votacao)
+    const res = precisaSegundoTurno(eleicao)
     expect(res).toBe(true)
   })
 })
 
 describe('getCandidatosSegundoTurno', () => {
-  let votacao: VotacaoPresidente
+  let eleicao: EleicaoPresidente
 
   beforeEach(() => {
-    votacao = {
+    const agora = new Date()
+    eleicao = {
       id: '',
-      data: new Date(),
+      title: '',
+      description: '',
+      startsAt: agora,
+      endsAt: agora,
+      status: 'closed',
+      createdAt: agora,
+      updatedAt: agora,
+      type: 'president',
+      turno: 1,
       candidatos: [],
       votosBrancos: 0,
       votosNulos: 0,
     }
   })
 
-  it('votacao vazia', () => {
-    const res = getCandidatosSegundoTurno(votacao)
+  it('eleicao vazia', () => {
+    const res = getCandidatosSegundoTurno(eleicao)
     expect(res).toBe(null)
   })
 
-  it('votacao com um candidato', () => {
-    votacao.candidatos = [{
+  it('eleicao com um candidato', () => {
+    eleicao.candidatos = [{
       id: '',
       nome: '',
       partido: '',
@@ -92,29 +112,29 @@ describe('getCandidatosSegundoTurno', () => {
       dataNascimento: new Date(),
     }]
 
-    const res = getCandidatosSegundoTurno(votacao)
+    const res = getCandidatosSegundoTurno(eleicao)
     expect(res).toBe(null)
   })
 
-  it('votacao com tres candidatos sem segundo turno', () => {
-    votacao.candidatos = [
+  it('eleicao com tres candidatos sem segundo turno', () => {
+    eleicao.candidatos = [
       { id: '', nome: '', partido: '', numero: 13, votos: 30, dataNascimento: new Date() },
       { id: '', nome: '', partido: '', numero: 22, votos: 19, dataNascimento: new Date() },
       { id: '', nome: '', partido: '', numero: 45, votos: 51, dataNascimento: new Date() },
     ]
 
-    const res = getCandidatosSegundoTurno(votacao)
+    const res = getCandidatosSegundoTurno(eleicao)
     expect(res).toBe(null)
   })
 
-  it('votacao com tres candidatos com segundo turno', () => {
+  it('eleicao com tres candidatos com segundo turno', () => {
     const c1: VotosCandidato = { id: '01', nome: '', partido: '', numero: 13, votos: 30, dataNascimento: new Date() }
     const c2: VotosCandidato = { id: '02', nome: '', partido: '', numero: 22, votos: 20, dataNascimento: new Date() }
     const c3: VotosCandidato = { id: '03', nome: '', partido: '', numero: 45, votos: 50, dataNascimento: new Date() }
 
-    votacao.candidatos = [c1, c2, c3]
+    eleicao.candidatos = [c1, c2, c3]
 
-    const res = getCandidatosSegundoTurno(votacao)
+    const res = getCandidatosSegundoTurno(eleicao)
     const ans = [c3, c1]
 
     expect(res).toEqual(ans)
@@ -122,6 +142,20 @@ describe('getCandidatosSegundoTurno', () => {
 })
 
 describe('resultadoConsultaPublica', () => {
+  const agora = new Date()
+  const baseConsulta: Omit<ConsultaPublica, 'sim' | 'nao'> = {
+    id: '',
+    title: '',
+    description: '',
+    startsAt: agora,
+    endsAt: agora,
+    status: 'closed',
+    createdAt: agora,
+    updatedAt: agora,
+    type: 'public-consultation',
+    local: 'SP',
+  }
+
   it.each([
     [[100, 50]],
     [[5, 4]],
@@ -129,7 +163,7 @@ describe('resultadoConsultaPublica', () => {
     [[-50, -51]],
     [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]],
   ])('consulta aprovada: %s', ([sim, nao]) => {
-    const c: ConsultaPublica = { id: '', local: '', data: new Date(), sim, nao }
+    const c: ConsultaPublica = { ...baseConsulta, sim, nao }
     expect(resultadoConsultaPublica(c)).toBe(true)
   })
 
@@ -140,7 +174,7 @@ describe('resultadoConsultaPublica', () => {
     [[-50, -51]],
     [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]],
   ])('consulta rejeitada: %s', ([nao, sim]) => {
-    const c: ConsultaPublica = { id: '', local: '', data: new Date(), sim, nao }
+    const c: ConsultaPublica = { ...baseConsulta, sim, nao }
     expect(resultadoConsultaPublica(c)).toBe(false)
   })
 })
@@ -150,9 +184,18 @@ describe('getResultadoPrimeiroTurno', () => {
   const candidatoB: VotosCandidato = { id: '2', nome: 'B', partido: 'B', numero: 20, votos: 0, dataNascimento: new Date() }
   const candidatoC: VotosCandidato = { id: '3', nome: 'C', partido: 'C', numero: 30, votos: 0, dataNascimento: new Date() }
 
-  const votacaoBase: Omit<VotacaoPresidente, 'candidatos'> = {
-    id: 'votacao-2026',
-    data: new Date('2026-10-04'),
+  const agora = new Date('2026-10-04')
+  const eleicaoBase: Omit<EleicaoPresidente, 'candidatos'> = {
+    id: 'eleicao-2026',
+    title: 'Eleição Presidencial 2026',
+    description: 'Primeiro Turno',
+    startsAt: agora,
+    endsAt: agora,
+    status: 'closed',
+    createdAt: agora,
+    updatedAt: agora,
+    type: 'president',
+    turno: 1,
     votosBrancos: 0,
     votosNulos: 0,
   }
@@ -162,12 +205,12 @@ describe('getResultadoPrimeiroTurno', () => {
     const candB = { ...candidatoB, votos: 30 }
     const candC = { ...candidatoC, votos: 10 }
 
-    const votacao: VotacaoPresidente = {
-      ...votacaoBase,
+    const eleicao: EleicaoPresidente = {
+      ...eleicaoBase,
       candidatos: [candA, candB, candC],
     }
 
-    const resultado = getResultadoPrimeiroTurno(votacao)
+    const resultado = getResultadoPrimeiroTurno(eleicao)
 
     expect(Array.isArray(resultado)).toBe(false)
     expect(resultado).toEqual(candA)
@@ -178,12 +221,12 @@ describe('getResultadoPrimeiroTurno', () => {
     const candB = { ...candidatoB, votos: 35 }
     const candC = { ...candidatoC, votos: 25 }
 
-    const votacao: VotacaoPresidente = {
-      ...votacaoBase,
+    const eleicao: EleicaoPresidente = {
+      ...eleicaoBase,
       candidatos: [candA, candB, candC],
     }
 
-    const resultado = getResultadoPrimeiroTurno(votacao)
+    const resultado = getResultadoPrimeiroTurno(eleicao)
 
     expect(Array.isArray(resultado)).toBe(true)
     expect(resultado).toEqual([candA, candB])
@@ -194,12 +237,12 @@ describe('getResultadoPrimeiroTurno', () => {
     const candB = { ...candidatoB, votos: 30 }
     const candC = { ...candidatoC, votos: 20 }
 
-    const votacao: VotacaoPresidente = {
-      ...votacaoBase,
+    const eleicao: EleicaoPresidente = {
+      ...eleicaoBase,
       candidatos: [candA, candB, candC],
     }
 
-    const resultado = getResultadoPrimeiroTurno(votacao)
+    const resultado = getResultadoPrimeiroTurno(eleicao)
 
     expect(Array.isArray(resultado)).toBe(true)
     expect(resultado).toEqual([candA, candB])
@@ -209,14 +252,14 @@ describe('getResultadoPrimeiroTurno', () => {
     const candA = { ...candidatoA, votos: 51 }
     const candB = { ...candidatoB, votos: 49 }
 
-    const votacao: VotacaoPresidente = {
-      ...votacaoBase,
+    const eleicao: EleicaoPresidente = {
+      ...eleicaoBase,
       votosBrancos: 500, // não deve afetar o cálculo
       votosNulos: 1000,
       candidatos: [candA, candB],
     }
 
-    const resultado = getResultadoPrimeiroTurno(votacao)
+    const resultado = getResultadoPrimeiroTurno(eleicao)
 
     expect(resultado).toEqual(candA)
   })
@@ -226,13 +269,13 @@ describe('getResultadoPrimeiroTurno', () => {
     const candB = { ...candidatoB, votos: 45 }
     const candC = { ...candidatoC, votos: 35 }
 
-    const votacao: VotacaoPresidente = {
-      ...votacaoBase,
+    const eleicao: EleicaoPresidente = {
+      ...eleicaoBase,
       // Enviando fora da ordem decrescente de votos
       candidatos: [candA, candB, candC],
     }
 
-    const resultado = getResultadoPrimeiroTurno(votacao)
+    const resultado = getResultadoPrimeiroTurno(eleicao)
 
     // Mais votado é B (45%), seguido de C (35%). Deve ir para o 2º turno com [B, C]
     expect(Array.isArray(resultado)).toBe(true)

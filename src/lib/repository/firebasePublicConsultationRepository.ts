@@ -6,7 +6,7 @@ import { ConsultaPublicaDocument, ElectionStatus, LocalConsulta } from '@/interf
 import { omitId } from '../utils/omitId'
 import { isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { validateDraft } from '@/schemas/electionDraftSchema'
-import { ELECTION_COLLECTION } from '../constants/election'
+import { ELECTION_COLLECTION } from '../constants/firebase'
 
 export class FirebasePublicConsultationRepository {
   // async findAll(): Promise<ConsultaPublica[]> {}

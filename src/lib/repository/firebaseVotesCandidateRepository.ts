@@ -2,8 +2,8 @@ import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { firestore } from '../firebase'
 import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
 import { votesCandidateAdapter } from '../adapter/firebaseVotesCandidateAdapter'
-import { CANDIDATES_ELECTION_SUBSOLLECTION } from '../constants/election'
 import { firebaseCandidate } from './firebaseCandidatesRepository'
+import { CANDIDATES_ELECTION_SUBSOLLECTION } from '../constants/firebase'
 
 export class FirebaseVotesCandidateRepository {
   /**

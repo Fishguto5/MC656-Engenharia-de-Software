@@ -4,7 +4,7 @@ import { EleicaoDeputado } from '@/interfaces/eleicaoInterfaces'
 import { EleicaoDeputadoDocument, ElectionStatus } from '@/interfaces/firebaseInterfaces'
 import { DatabaseAdapter } from './databaseInterface'
 import { RawDocumentTimeToDate } from '../utils/date'
-import { UF } from '@/lib/deputado'
+import { UF } from '../constants/election'
 
 const DeputyRawSchema = z.object({
   id: z.string(),

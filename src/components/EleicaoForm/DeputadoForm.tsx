@@ -2,7 +2,7 @@ import styles from './EleicaoForm.module.css'
 import CandidatoDropDown from '../CandidatoDropDown/CandidatoDropDown'
 import { useEleicao } from './EleicaoContext'
 import { maxDeputyDoB } from '@/lib/repository/firebaseElectionDeputyRepository'
-import { LISTA_UFS } from '@/lib/deputado'
+import { LISTA_UFS } from '@/lib/constants/election'
 
 export default function DeputadoForm() {
   const { formData, handleFieldChange, initialCandidatos, handleDropDownChange } = useEleicao()

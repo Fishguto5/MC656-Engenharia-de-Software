@@ -1,11 +1,12 @@
-import { ElectionStatus, ElectionType, validElectionType } from '@/interfaces/firebaseInterfaces'
+import { ElectionStatus } from '@/interfaces/firebaseInterfaces'
 import { doc, getDoc } from 'firebase/firestore'
 import { firestore } from '../firebase'
 import { FirebaseDeputyRepository } from './firebaseElectionDeputyRepository'
 import { FirebasePresidentRepository } from './firebaseElectionPresidentRepository'
 import { FirebasePublicConsultationRepository } from './firebasePublicConsultationRepository'
-import { ELECTION_COLLECTION } from '../constants/election'
 import { EleicaoPresidente, EleicaoDeputado, ConsultaPublica } from '@/interfaces/eleicaoInterfaces'
+import { ElectionType, VALID_ELECTION_TYPE } from '../constants/election'
+import { ELECTION_COLLECTION } from '../constants/firebase'
 
 // União de todos os domínios aceitos
 export type EleicaoDomain = EleicaoPresidente | EleicaoDeputado | ConsultaPublica
@@ -39,7 +40,7 @@ class FirebaseElectionFacade {
     }
 
     // Retorna o tipo da eleição
-    if (!electionData?.type || !validElectionType.has(electionData.type)) {
+    if (!electionData?.type || !VALID_ELECTION_TYPE.has(electionData.type)) {
       return null
     }
 

@@ -1,11 +1,8 @@
-import { UF } from '@/lib/deputado'
+import { ElectionType, UF } from '@/lib/constants/election'
 import { Timestamp } from '@firebase/firestore'
 
 // Interface Base da eleição
 export type ElectionStatus = 'draft' | 'scheduled' | 'open' | 'closed' | 'cancelled'
-const valuesElectionType = ['president', 'deputy', 'public-consultation'] as const
-export const validElectionType = new Set<string>(valuesElectionType)
-export type ElectionType = typeof valuesElectionType[number]
 
 export interface BaseElectionDocument {
   id: string

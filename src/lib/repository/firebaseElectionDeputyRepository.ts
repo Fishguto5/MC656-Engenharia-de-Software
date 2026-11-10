@@ -7,8 +7,8 @@ import { ElectionStatus, EleicaoDeputadoDocument } from '@/interfaces/firebaseIn
 import { DeputyRawDocument, deputyAdapter } from '../adapter/firebaseDeputyAdapter'
 import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
 import { validateDraft } from '@/schemas/electionDraftSchema'
-import { ELECTION_COLLECTION, MINIMUM_DEPUTY_AGE } from '../constants/election'
-import { UF } from '../deputado'
+import { MINIMUM_DEPUTY_AGE, UF } from '../constants/election'
+import { ELECTION_COLLECTION } from '../constants/firebase'
 
 export const maxDeputyDoB = () => getDateYearsAgo(MINIMUM_DEPUTY_AGE)
 

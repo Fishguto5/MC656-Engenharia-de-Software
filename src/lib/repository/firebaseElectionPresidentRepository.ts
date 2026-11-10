@@ -7,7 +7,8 @@ import { EleicaoPresidente } from '@/interfaces/eleicaoInterfaces'
 import { PresidentRawDocument, presidentAdapter } from '../adapter/firebasePresidentAdapter'
 import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
 import { validateDraft } from '@/schemas/electionDraftSchema'
-import { ELECTION_COLLECTION, MINIMUM_PRESIDENT_AGE } from '../constants/election'
+import { MINIMUM_PRESIDENT_AGE } from '../constants/election'
+import { ELECTION_COLLECTION } from '../constants/firebase'
 
 export const maxPresidentDoB = () => {
   return getDateYearsAgo(MINIMUM_PRESIDENT_AGE)
