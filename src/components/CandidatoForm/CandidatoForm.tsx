@@ -1,5 +1,5 @@
 import { ChangeEvent } from 'react'
-import './CandidatoForm.css'
+import styles from './CandidatoForm.module.css'
 import { maxCandidateDoB } from '@/lib/repository/firebaseCandidatesRepository'
 
 interface CandidatoFormProps {
