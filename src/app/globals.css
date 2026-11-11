@@ -18,6 +18,9 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* ==========================================================================
+   Layouts Base de Páginas
+   ========================================================================== */
 .signup-page {
   align-items: center;
   display: flex;
@@ -26,12 +29,46 @@ body {
   padding: 32px 20px;
 }
 
+.signup-candidate-page {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 32px 20px;
+}
+
+.signup-candidate-header {
+  width: min(100%, 768px);
+}
+
+section.candidate-list {
+  width: min(100%, 768px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+section.candidate-list h1 {
+  color: #080808;
+  font-size: clamp(1.75rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 48px;
+  text-align: center;
+}
+
+.center-page {
+  justify-content: center;
+}
+
 .signup-card {
   margin-top: -8vh;
   width: min(100%, 520px);
 }
 
-.signup-card h1 {
+.signup-card h1,
+.signup-candidate-page h1 {
   color: #080808;
   font-size: clamp(1.75rem, 4vw, 2rem);
   font-weight: 700;
@@ -40,6 +77,9 @@ body {
   text-align: center;
 }
 
+/* ==========================================================================
+   Formulários e Inputs Base
+   ========================================================================== */
 .signup-form {
   margin: 0 auto;
   width: min(100%, 340px);
@@ -59,7 +99,9 @@ body {
   text-align: right;
 }
 
-.form-field input {
+.form-field input,
+textarea,
+select {
   border: 1px solid #999999;
   border-radius: 0;
   box-sizing: border-box;
@@ -70,7 +112,9 @@ body {
   padding: 3px 6px;
 }
 
-.form-field input:focus {
+.form-field input:focus,
+textarea:focus,
+select:focus {
   border-color: #333333;
   outline: 2px solid #d4d4d4;
   outline-offset: 1px;
@@ -81,13 +125,19 @@ body {
   opacity: 1;
 }
 
-.signup-form button {
+/* ==========================================================================
+   Botões Globais
+   ========================================================================== */
+.primary-btn {
   background: #333333;
   border: 0;
   border-radius: 0;
   color: #ffffff;
   cursor: pointer;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   font:
     700 0.9rem Arial,
     Helvetica,
@@ -99,15 +149,25 @@ body {
   width: 100%;
 }
 
-.signup-form button:hover {
+.primary-btn:hover {
   background: #1f1f1f;
 }
 
-.signup-form button:focus-visible {
+.primary-btn:focus-visible {
   outline: 2px solid #111111;
   outline-offset: 2px;
 }
 
+.primary-btn.disabled {
+  background-color: #504f4f !important;
+  cursor: not-allowed !important;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Mensagens do Formulário
+   ========================================================================== */
 .form-message {
   color: #a31818;
   font-size: 0.875rem;

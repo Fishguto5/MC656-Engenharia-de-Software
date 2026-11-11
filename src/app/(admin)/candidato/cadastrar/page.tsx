@@ -1,7 +1,6 @@
 'use client'
 
 import { ChangeEvent, useState } from 'react'
-import '../candidato.css'
 import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
 import { useRouter } from 'next/navigation'
 import CandidatoForm from '@/components/CandadatoForm/CandidatoForm'

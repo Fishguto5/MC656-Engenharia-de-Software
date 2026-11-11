@@ -1,7 +1,6 @@
 'use client'
 
 import { ChangeEvent, useEffect, useState } from 'react'
-import '../../candidato.css' // Ajustado o caminho por causa da pasta [id]/editar
 import { useParams, useRouter } from 'next/navigation'
 import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
 import CandidatoForm from '@/components/CandadatoForm/CandidatoForm'

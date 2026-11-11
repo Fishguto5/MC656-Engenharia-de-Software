@@ -1,7 +1,6 @@
 'use client'
 
 import CandidatoCard from '@/components/CandidatoCard/CandidatoCard'
-import './candidato.css'
 import { Candidato } from '@/interfaces/eleicaoInterfaces'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
@@ -117,13 +116,13 @@ export default function CandidatoClientView({ initialCandidatos }: { initialCand
 
   return (
     <main className="signup-candidate-page">
-      <header>
-        <Link href="/candidato/cadastrar" className="adicionar-candidato">Novo Candidato</Link>
+      <header className="signup-candidate-header">
+        <Link href="/candidato/cadastrar" className="primary-btn ">Novo Candidato</Link>
 
         <div className="w-full">
           <label
             htmlFor="csvFileInput"
-            className={`adicionar-candidato ${isUploading ? 'disabled-label' : ''}`}
+            className={`primary-btn  ${isUploading ? 'disabled' : ''}`}
             title="nome|partido|dataNascimento|federacao (opicional)"
           >
             Importar Candidato
