@@ -2,6 +2,7 @@ import { DocumentData, Timestamp } from 'firebase/firestore'
 import { FirebaseElectionData, FirebaseElectionDocument } from './FirebaseElectionData'
 import { BaseElection } from '@/interfaces/eleicaoInterfaces'
 import { ElectionStatus } from '@/interfaces/firebaseInterfaces'
+import { ElectionType } from '@/lib/constants/election'
 
 // Help Functions
 function requireNonEmptyString(value: unknown, fieldName: string, id: string): string {
@@ -51,6 +52,16 @@ function parseStatus(value: unknown, id: string): ElectionStatus {
   throw new Error(`[Election:${id}] Invalid status value '${String(value)}'.`)
 }
 
+function parseType(value: unknown, id: string): ElectionType {
+  const validTypes: ElectionType[] = ['deputy', 'president', 'public-consultation']
+
+  if (typeof value === 'string' && validTypes.includes(value as ElectionType)) {
+    return value as ElectionType
+  }
+
+  throw new Error(`[Election:${id}] Invalid election type value '${String(value)}'.`)
+}
+
 function validateDateOrder(startsAt: Date, endsAt: Date, id: string): void {
   if (startsAt.getTime() >= endsAt.getTime()) {
     throw new Error(`[Election:${id}] 'startsAt' must be strictly before 'endsAt'.`)
@@ -79,6 +90,7 @@ export function fromFirebase(
     status: parseStatus(data.status, id),
     createdAt: requireDate(data.created_at, 'created_at', id),
     updatedAt: requireDate(data.updated_at ?? data.created_at, 'updated_at', id),
+    type: parseType(data.type, id),
   }
 }
 
@@ -91,5 +103,6 @@ export function toFirebase(election: BaseElection): FirebaseElectionDocument {
     status: election.status,
     created_at: Timestamp.fromDate(election.createdAt),
     updated_at: Timestamp.fromDate(election.updatedAt),
+    type: election.type,
   }
 }

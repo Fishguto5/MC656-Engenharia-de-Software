@@ -1,24 +1,15 @@
 import { Candidato } from '@/interfaces/eleicaoInterfaces'
-import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateDoc, getDoc, addDoc, QueryDocumentSnapshot, DocumentData, writeBatch, Timestamp } from 'firebase/firestore'
+import { QuerySnapshot, query, collection, orderBy, getDocs, where, doc, updateDoc, getDoc, addDoc, QueryDocumentSnapshot, DocumentData, writeBatch, Timestamp, documentId } from 'firebase/firestore'
 import { candidateAdapter, CandidatoRawDocument } from '../adapter/firebaseCandidateAdapter'
 import { firestore } from '../firebase'
+import { getDateYearsAgo } from '../utils/date'
+import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
+import { omitId } from '../utils/omitId'
+import { MINIMUM_AGE } from '../constants/election'
+import { CANDIDATES_COLLECTION } from '../constants/firebase'
 
-export const CANDIDATES_COLLECTION = 'candidatos'
-
-/* Idade mínima para Deputado = 21 anos
- * Idade mínima para Presidente = 35 anos
- * A lógica de eleição verifica a idade para presidente
-*/
-export const MINIMUM_AGE = 21
-export const getMaxDate = () => {
-  const date = new Date()
-  date.setFullYear(date.getFullYear() - MINIMUM_AGE)
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
+export const maxCandidateDoB = () => {
+  return getDateYearsAgo(MINIMUM_AGE)
 }
 
 class FirebaseCandidatesRepository {
@@ -41,12 +32,15 @@ class FirebaseCandidatesRepository {
   }
 
   private isValidaDoB(DoB: Timestamp): boolean {
-    // Remove horas/minutos para comparar apenas o dia
-    const dateDoB = DoB.toDate()
-    const dateCandidate = new Date(dateDoB.getFullYear(), dateDoB.getMonth(), dateDoB.getDate())
-    const maxDate = new Date(`${getMaxDate()}T00:00:00`)
+    // Converte o Timestamp e zera o horário (00:00:00.000)
+    const candidateDate = DoB.toDate()
+    candidateDate.setHours(0, 0, 0, 0)
 
-    return dateCandidate <= maxDate
+    // Obtém a data máxima permitida e também zera o horário
+    const maxDate = new Date(`${maxCandidateDoB()}T00:00:00`)
+    maxDate.setHours(0, 0, 0, 0)
+
+    return candidateDate <= maxDate
   }
 
   async findAll(): Promise<Candidato[]> {
@@ -94,6 +88,30 @@ class FirebaseCandidatesRepository {
     }
   }
 
+  async findBatchById(ids: string[]): Promise<Candidato[]> {
+    if (ids.length === 0) return []
+
+    // Limite de 30 IDs por consulta 'in' do Firestore
+    const CHUNK_SIZE = 30
+    const chunks: string[][] = []
+
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+      chunks.push(ids.slice(i, i + CHUNK_SIZE))
+    }
+
+    const promises = chunks.map(async (chunk) => {
+      const candidatesQuery = query(
+        collection(firestore, CANDIDATES_COLLECTION),
+        where(documentId(), 'in', chunk),
+      )
+      const snapshot = await getDocs(candidatesQuery)
+      return this.mapSnapshotToCandidates(snapshot)
+    })
+
+    const results = await Promise.all(promises)
+    return results.flat()
+  }
+
   async deactivate(id: string): Promise<void> {
     const candidateRef = doc(firestore, CANDIDATES_COLLECTION, id)
 
@@ -117,13 +135,7 @@ class FirebaseCandidatesRepository {
     }
 
     // Criar data
-    const data = {
-      nome: dbData.nome,
-      partido: dbData.partido,
-      dataNascimento: dbData.dataNascimento,
-      federacao: dbData.federacao,
-      isActive: dbData.isActive,
-    }
+    const data = omitId<CandidatoDocument>(dbData)
 
     try {
       await addDoc(collection(firestore, CANDIDATES_COLLECTION), data)
@@ -134,7 +146,7 @@ class FirebaseCandidatesRepository {
     }
   }
 
-  async createBatch(domain: Candidato[]): Promise<Candidato[]> {
+  async saveBatch(domain: Candidato[]): Promise<Candidato[]> {
     const batch = writeBatch(firestore)
     const collectionRef = collection(firestore, CANDIDATES_COLLECTION)
 
@@ -149,13 +161,7 @@ class FirebaseCandidatesRepository {
         return
       }
 
-      const data = {
-        nome: dbData.nome,
-        partido: dbData.partido,
-        dataNascimento: dbData.dataNascimento,
-        federacao: dbData.federacao ?? null,
-        isActive: dbData.isActive,
-      }
+      const data = omitId<CandidatoDocument>(dbData)
 
       // Cria a referência gerando o ID único antecipadamente
       const candidateRef = doc(collectionRef)
@@ -188,13 +194,7 @@ class FirebaseCandidatesRepository {
       return
     }
 
-    const data = {
-      nome: dbData.nome,
-      partido: dbData.partido,
-      federacao: dbData.federacao ?? null,
-      dataNascimento: dbData.dataNascimento,
-      isActive: dbData.isActive,
-    }
+    const data = omitId<CandidatoDocument>(dbData)
 
     const candidateRef = doc(firestore, CANDIDATES_COLLECTION, domain.id)
 
@@ -208,4 +208,4 @@ class FirebaseCandidatesRepository {
   }
 }
 
-export const firebaseCandidateRepository = new FirebaseCandidatesRepository()
+export const firebaseCandidate = new FirebaseCandidatesRepository()

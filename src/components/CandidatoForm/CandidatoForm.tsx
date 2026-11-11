@@ -1,6 +1,6 @@
 import { ChangeEvent } from 'react'
 import './CandidatoForm.css'
-import { getMaxDate } from '@/lib/repository/firebaseCandidatesRepository'
+import { maxCandidateDoB } from '@/lib/repository/firebaseCandidatesRepository'
 
 interface CandidatoFormProps {
   name: string
@@ -56,7 +56,7 @@ export default function CandidatoForm(props: CandidatoFormProps) {
           type="date"
           name="DoB"
           id="DoB"
-          max={getMaxDate()}
+          max={maxCandidateDoB()}
           required
           value={props.DoB}
           onChange={props.handleChange}

@@ -1,4 +1,5 @@
 import { ElectionStatus } from '@/interfaces/firebaseInterfaces'
+import { ElectionType } from '@/lib/constants/election'
 import type { Timestamp } from 'firebase/firestore'
 
 export interface FirebaseElectionData {
@@ -9,6 +10,7 @@ export interface FirebaseElectionData {
   status?: unknown
   created_at?: Timestamp | Date | string | number | null
   updated_at?: Timestamp | Date | string | number | null
+  type?: unknown
 }
 
 export interface FirebaseElectionDocument {
@@ -19,4 +21,5 @@ export interface FirebaseElectionDocument {
   status: ElectionStatus
   created_at: Timestamp
   updated_at: Timestamp
+  type: ElectionType
 }
