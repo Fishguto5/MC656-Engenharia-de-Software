@@ -1,7 +1,8 @@
 'use client'
 
 import { ChangeEvent, useState } from 'react'
-import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
+import '../candidato.css'
+import { firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository'
 import { useRouter } from 'next/navigation'
 import CandidatoForm from '@/components/CandidatoForm/CandidatoForm'
 
@@ -58,7 +59,7 @@ export default function CadastrarCandidato() {
     }
 
     try {
-      await firebaseCandidateRepository.create(submitData)
+      await firebaseCandidate.create(submitData)
       alert('Candidato criado com sucesso!')
       cleanForms()
       router.refresh()

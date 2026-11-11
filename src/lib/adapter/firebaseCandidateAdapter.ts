@@ -3,6 +3,7 @@ import { Candidato } from '@/interfaces/eleicaoInterfaces'
 import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
 import { DatabaseAdapter } from './databaseInterface'
 import { Timestamp } from 'firebase/firestore'
+import { RawDocumentTimeToDate } from '../utils/date'
 
 // Apenas 'federacao' é opcional/nullable.
 const candidatoRawSchema = z.object({
@@ -24,13 +25,7 @@ class CandidateAdapter implements DatabaseAdapter<CandidatoDocument, Candidato, 
   fromDB(raw: CandidatoRawDocument): Candidato {
     const parsed = candidatoRawSchema.parse(raw) // Se faltar algum obrigatório, o Zod lança um erro
 
-    let dataNascimentoDate = new Date()
-    if (parsed.dataNascimento instanceof Timestamp) {
-      dataNascimentoDate = parsed.dataNascimento.toDate()
-    }
-    else if (typeof parsed.dataNascimento === 'string') {
-      dataNascimentoDate = new Date(parsed.dataNascimento)
-    }
+    const dataNascimentoDate = RawDocumentTimeToDate(parsed.dataNascimento)
 
     return {
       id: parsed.id,

@@ -14,6 +14,7 @@ import { fromFirebase, toFirebase } from './FirebaseElectionAdapter'
 import { firestore } from './firebase'
 import { ElectionStatus } from '@/interfaces/firebaseInterfaces'
 import { BaseElection } from '@/interfaces/eleicaoInterfaces'
+import { ElectionType } from '@/lib/constants/election'
 
 // Types
 export interface CreateElectionInput {
@@ -22,6 +23,7 @@ export interface CreateElectionInput {
   startsAt: Date
   endsAt: Date
   status?: ElectionStatus
+  type: ElectionType
 }
 
 export interface UpdateElectionInput {
@@ -30,6 +32,7 @@ export interface UpdateElectionInput {
   startsAt?: Date
   endsAt?: Date
   status?: ElectionStatus
+  type?: ElectionType
 }
 
 // Constantes
@@ -76,6 +79,7 @@ export class FirebaseElectionRepository {
       status: input.status ?? 'draft',
       createdAt: now,
       updatedAt: now,
+      type: input.type,
     }
 
     const firebaseData = toFirebase(electionToCreate)
@@ -112,6 +116,7 @@ export class FirebaseElectionRepository {
       status: input.status ?? currentElection.status,
       createdAt: currentElection.createdAt,
       updatedAt: new Date(),
+      type: input.type ?? currentElection.type,
     }
 
     const firebaseData = toFirebase(updatedElection)

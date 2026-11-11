@@ -2,7 +2,7 @@
 
 import { ChangeEvent, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
+import { firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository'
 import CandidatoForm from '@/components/CandidatoForm/CandidatoForm'
 
 export default function EditarCandidato() {
@@ -23,7 +23,7 @@ export default function EditarCandidato() {
 
       async function getCandidato() {
         try {
-          const candidato = await firebaseCandidateRepository.findById(id)
+          const candidato = await firebaseCandidate.findById(id)
           if (isMounted && candidato) {
             setFormsData({
               name: candidato.nome,
@@ -81,7 +81,7 @@ export default function EditarCandidato() {
     }
 
     try {
-      await firebaseCandidateRepository.update(submitData)
+      await firebaseCandidate.update(submitData)
       router.refresh()
       alert('Candidato atualizado com sucesso!')
     }

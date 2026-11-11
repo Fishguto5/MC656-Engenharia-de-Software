@@ -4,7 +4,7 @@ import CandidatoCard from '@/components/CandidatoCard/CandidatoCard'
 import { Candidato } from '@/interfaces/eleicaoInterfaces'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
+import { firebaseCandidate } from '@/lib/repository/firebaseCandidatesRepository'
 import Papa from 'papaparse'
 import { useRouter } from 'next/navigation'
 
@@ -27,7 +27,7 @@ export default function CandidatoClientView({ initialCandidatos }: { initialCand
     setCandidatos(prev => prev.filter(c => c.id !== id))
 
     try {
-      await firebaseCandidateRepository.deactivate(id)
+      await firebaseCandidate.deactivate(id)
     }
     catch (error) {
       console.error('Erro ao desativar candidato:', error)
@@ -85,7 +85,7 @@ export default function CandidatoClientView({ initialCandidatos }: { initialCand
           }
 
           // Salva no Firebase e recebe os candidatos já com os IDs reais gerados
-          const novosCandidatos = await firebaseCandidateRepository.createBatch(candidatosProcessados)
+          const novosCandidatos = await firebaseCandidate.saveBatch(candidatosProcessados)
 
           // Atualiza o estado local
           setCandidatos(prev => [...prev, ...novosCandidatos].sort((a, b) => a.partido.localeCompare(b.partido)))

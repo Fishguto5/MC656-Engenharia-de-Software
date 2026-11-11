@@ -18,6 +18,7 @@ describe('FirebaseElectionAdapter', () => {
       status: 'scheduled',
       created_at: Timestamp.fromDate(createdAt),
       updated_at: Timestamp.fromDate(updatedAt),
+      type: 'deputy',
     })
 
     expect(election).toEqual({
@@ -29,6 +30,7 @@ describe('FirebaseElectionAdapter', () => {
       status: 'scheduled',
       createdAt,
       updatedAt,
+      type: 'deputy',
     })
   })
 
@@ -41,10 +43,12 @@ describe('FirebaseElectionAdapter', () => {
       status: 'draft',
       created_at: '2026-10-25T12:00:00.000Z',
       updated_at: '2026-10-25T12:00:00.000Z',
+      type: 'president',
     })
 
     expect(election.startsAt).toEqual(new Date('2026-11-10T12:00:00.000Z'))
     expect(election.endsAt).toEqual(new Date('2026-11-11T12:00:00.000Z'))
+    expect(election.type).toBe('president')
   })
 
   it('uses created_at when updated_at is absent', () => {
@@ -57,9 +61,11 @@ describe('FirebaseElectionAdapter', () => {
       ends_at: new Date('2026-11-11T12:00:00.000Z'),
       status: 'draft',
       created_at: createdAt,
+      type: 'public-consultation',
     })
 
     expect(election.updatedAt).toEqual(createdAt)
+    expect(election.type).toBe('public-consultation')
   })
 
   it('throws an error when title is empty', () => {
@@ -71,6 +77,7 @@ describe('FirebaseElectionAdapter', () => {
         status: 'draft',
         created_at: new Date(),
         updated_at: new Date(),
+        type: 'deputy',
       }),
     ).toThrow('[Election:invalid-election] Invalid or missing required field \'title\'.')
   })
@@ -84,8 +91,23 @@ describe('FirebaseElectionAdapter', () => {
         status: 'unknown-status',
         created_at: new Date(),
         updated_at: new Date(),
+        type: 'deputy',
       }),
     ).toThrow('[Election:invalid-election] Invalid status value \'unknown-status\'.')
+  })
+
+  it('throws an error for an invalid type', () => {
+    expect(() =>
+      fromFirebase('invalid-election', {
+        title: 'Eleição inválida',
+        starts_at: new Date('2026-11-10T12:00:00.000Z'),
+        ends_at: new Date('2026-11-11T12:00:00.000Z'),
+        status: 'draft',
+        created_at: new Date(),
+        updated_at: new Date(),
+        type: 'invalid-type',
+      }),
+    ).toThrow('[Election:invalid-election] Invalid election type value \'invalid-type\'.')
   })
 
   it('throws an error when election ends before it starts', () => {
@@ -97,6 +119,7 @@ describe('FirebaseElectionAdapter', () => {
         status: 'draft',
         created_at: new Date(),
         updated_at: new Date(),
+        type: 'deputy',
       }),
     ).toThrow('[Election:invalid-election] \'startsAt\' must be strictly before \'endsAt\'.')
   })
@@ -116,6 +139,7 @@ describe('FirebaseElectionAdapter', () => {
       status: 'scheduled',
       createdAt,
       updatedAt,
+      type: 'deputy',
     }
 
     const firebaseData = toFirebase(election)
@@ -123,6 +147,7 @@ describe('FirebaseElectionAdapter', () => {
     expect(firebaseData.title).toBe('Eleição de teste')
     expect(firebaseData.description).toBe('Descrição')
     expect(firebaseData.status).toBe('scheduled')
+    expect(firebaseData.type).toBe('deputy')
 
     expect((firebaseData.starts_at as Timestamp).toDate()).toEqual(startsAt)
     expect((firebaseData.ends_at as Timestamp).toDate()).toEqual(endsAt)
