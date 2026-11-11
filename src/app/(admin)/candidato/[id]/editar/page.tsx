@@ -3,7 +3,7 @@
 import { ChangeEvent, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
-import CandidatoForm from '@/components/CandadatoForm/CandidatoForm'
+import CandidatoForm from '@/components/CandidatoForm/CandidatoForm'
 
 export default function EditarCandidato() {
   const router = useRouter()

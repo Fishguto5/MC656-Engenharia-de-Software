@@ -3,7 +3,7 @@
 import { ChangeEvent, useState } from 'react'
 import { firebaseCandidateRepository } from '@/lib/repository/firebaseCandidatesRepository'
 import { useRouter } from 'next/navigation'
-import CandidatoForm from '@/components/CandadatoForm/CandidatoForm'
+import CandidatoForm from '@/components/CandidatoForm/CandidatoForm'
 
 export default function CadastrarCandidato() {
   const router = useRouter()

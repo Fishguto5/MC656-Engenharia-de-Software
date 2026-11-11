@@ -1,5 +1,5 @@
 import { ChangeEvent } from 'react'
-import './CandidatoForm.css'
+import styles from './CandidatoForm.module.css'
 import { getMaxDate } from '@/lib/repository/firebaseCandidatesRepository'
 
 interface CandidatoFormProps {
@@ -14,7 +14,7 @@ interface CandidatoFormProps {
 export default function CandidatoForm(props: CandidatoFormProps) {
   return (
     <form method="POST" action="#" className="signup-form" onSubmit={props.handleSubmit}>
-      <div className="form-field">
+      <div className={`form-field ${styles.formField}`}>
         <label htmlFor="name">Nome</label>
         <input
           type="text"
@@ -27,7 +27,7 @@ export default function CandidatoForm(props: CandidatoFormProps) {
         />
       </div>
 
-      <div className="form-field">
+      <div className={`form-field ${styles.formField}`}>
         <label htmlFor="party">Partido</label>
         <input
           type="text"
@@ -39,7 +39,7 @@ export default function CandidatoForm(props: CandidatoFormProps) {
         />
       </div>
 
-      <div className="form-field">
+      <div className={`form-field ${styles.formField}`}>
         <label htmlFor="federation">Federação (Opicional)</label>
         <input
           type="text"
@@ -50,7 +50,7 @@ export default function CandidatoForm(props: CandidatoFormProps) {
         />
       </div>
 
-      <div className="form-field">
+      <div className={`form-field ${styles.formField}`}>
         <label htmlFor="DoB">Data de Nascimento</label>
         <input
           type="date"
@@ -63,7 +63,7 @@ export default function CandidatoForm(props: CandidatoFormProps) {
         />
       </div>
 
-      <button type="submit">Salvar</button>
+      <button type="submit" className="primary-btn">Salvar</button>
     </form>
   )
 }
