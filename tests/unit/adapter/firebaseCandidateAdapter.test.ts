@@ -2,8 +2,7 @@ import { Candidato } from '@/interfaces/eleicaoInterfaces'
 import { CandidatoDocument } from '@/interfaces/firebaseInterfaces'
 import { candidateAdapter, CandidatoRawDocument } from '@/lib/adapter/firebaseCandidateAdapter'
 import { Timestamp } from 'firebase/firestore'
-import { describe, it } from 'node:test'
-import { expect } from 'vitest'
+import { expect, describe, it } from 'vitest'
 
 describe('fromDB', () => {
   it('Candidato completo e dataNascimento em Timestamp', () => {

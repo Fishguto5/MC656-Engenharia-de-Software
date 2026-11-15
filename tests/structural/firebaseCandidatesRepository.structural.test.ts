@@ -132,6 +132,19 @@ describe('testes estruturais de firebaseCandidateRepository', () => {
     expect(candidatos.map(candidato => candidato.id)).toEqual(['id-1', 'id-31'])
   })
 
+  it('divide a consulta em um único lote para o limite exato de 30 IDs', async () => {
+    const ids = Array.from({ length: 30 }, (_, index) => `id-${index + 1}`)
+
+    vi.mocked(getDocs).mockResolvedValueOnce(snapshot([
+      documento('id-1', { nome: 'Candidato 1', partido: 'P1' }),
+    ]))
+
+    const candidatos = await firebaseCandidate.findBatchById(ids)
+
+    expect(getDocs).toHaveBeenCalledTimes(1)
+    expect(candidatos).toHaveLength(1)
+  })
+
   it('traduz a falha de desativação para um erro do domínio', async () => {
     vi.mocked(updateDoc).mockRejectedValueOnce(new Error('Firestore indisponível'))
 
