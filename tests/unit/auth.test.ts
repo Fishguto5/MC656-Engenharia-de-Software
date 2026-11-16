@@ -89,12 +89,29 @@ describe('signIn', () => {
     expect(JSON.parse(storage.getItem(STORAGE_KEY)!)).toEqual({ cpf: '12345678909', isAdmin: true })
   })
 
-  it('rejeita CPF com quantidade de dígitos inválida sem consultar o Firestore', async () => {
+  it('rejeita CPF inválido sem consultar o Firestore', async () => {
     const auth = new FirestoreAuthFacade(config)
 
-    await expect(auth.signIn('123')).rejects.toThrow('CPF inválido.')
-    await expect(auth.signIn('')).rejects.toThrow('CPF inválido.')
+    // n=12 (off-by-one)
+    await expect(auth.signIn('123.456.789-012')).rejects.toThrow('CPF inválido.')
+    await expect(auth.signIn('123456789012')).rejects.toThrow('CPF inválido.')
+
+    // n=10 (off-by-one)
+    await expect(auth.signIn('123.456.789-0')).rejects.toThrow('CPF inválido.')
+    await expect(auth.signIn('1234567890')).rejects.toThrow('CPF inválido.')
+
     expect(getDoc).not.toHaveBeenCalled()
+  })
+
+  it('aceita CPF válido', async () => {
+    vi.mocked(getDoc).mockImplementation((async (ref: { id: string }) =>
+      snapshot(ref.id, { isAdmin: false })) as never)
+
+    const auth = new FirestoreAuthFacade(config)
+
+    // n=11
+    await expect(auth.signIn('12345678910')).resolves.toMatchObject({ cpf: '12345678910' })
+    await expect(auth.signIn('123.456.789-10')).resolves.toMatchObject({ cpf: '12345678910' })
   })
 
   it('rejeita CPF inexistente e não persiste nada', async () => {

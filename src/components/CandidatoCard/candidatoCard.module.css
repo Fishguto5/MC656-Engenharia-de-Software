@@ -1,0 +1,59 @@
+.card {
+  border: solid 1px #999999;
+  width: 100%;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  color: #080808;
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.partyFederation {
+  display: flex;
+  gap: 8px;
+}
+
+.iconContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+.cardButton {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: solid 2px black;
+  border-radius: 5px;
+  cursor: pointer;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.edit:hover {
+  background-color: #d97706;
+}
+
+.trash:hover {
+  background-color: #dc2626;
+}
+
+@media screen and (min-width: 768px) {
+  .iconContainer {
+    flex-direction: column;
+  }
+
+  .cardButton {
+    width: 30px;
+    height: 30px;
+  }
+}

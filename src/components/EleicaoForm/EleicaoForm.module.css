@@ -1,0 +1,21 @@
+.signupForm {
+  width: min(100%, 440px);
+}
+
+.formField {
+  align-items: start;
+  grid-template-columns: 150px 1fr;
+  margin-bottom: 20px;
+}
+
+.formField textarea {
+  min-height: 56px; /* 2 Linhas */
+  max-height: 140px; /* 5 Linhas */
+  /* resize: none; */
+}
+
+.candidatosContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
