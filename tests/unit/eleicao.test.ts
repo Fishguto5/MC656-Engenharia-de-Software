@@ -159,6 +159,7 @@ describe('resultadoConsultaPublica', () => {
   it.each([
     [[100, 50]],
     [[5, 4]],
+    [[51, 49]],
     [[90, -1]],
     [[-50, -51]],
     [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]],
@@ -170,6 +171,7 @@ describe('resultadoConsultaPublica', () => {
   it.each([
     [[100, 50]],
     [[5, 4]],
+    [[51, 49]],
     [[90, -1]],
     [[-50, -51]],
     [[Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER - 1]],
@@ -177,6 +179,10 @@ describe('resultadoConsultaPublica', () => {
     const c: ConsultaPublica = { ...baseConsulta, sim, nao }
     expect(resultadoConsultaPublica(c)).toBe(false)
   })
+
+  // sim=nao
+  const empate: ConsultaPublica = { ...baseConsulta, sim: 50, nao: 50 }
+  expect(resultadoConsultaPublica(empate)).toBe(false)
 })
 
 describe('getResultadoPrimeiroTurno', () => {
