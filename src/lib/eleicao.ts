@@ -28,7 +28,7 @@ export function getCandidatosSegundoTurno(
 }
 
 export function resultadoConsultaPublica(c: ConsultaPublica): boolean {
-  return c.sim >= c.nao
+  return c.sim > c.nao
 }
 
 export function getResultadoPrimeiroTurno(eleicao: EleicaoPresidente): ResultadoPrimeiroTurno {
