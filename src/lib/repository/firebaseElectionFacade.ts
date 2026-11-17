@@ -10,10 +10,9 @@ import { ELECTION_COLLECTION } from '../constants/firebase'
 
 // União de todos os domínios aceitos
 export type EleicaoDomain = EleicaoPresidente | EleicaoDeputado | ConsultaPublica
-export type VotePayload =
-  | { type: 'deputy'; candidateNumbers: number[] }
-  | { type: 'president'; candidateNumber: number }
-  | { type: 'public-consultation'; proposalApproved: boolean };
+export type VotePayload
+  = | { type: 'president' | 'deputy', candidateNumber: number }
+    | { type: 'public-consultation', proposalApproved: boolean }
 
 class FirebaseElectionFacade {
   // Repositórios

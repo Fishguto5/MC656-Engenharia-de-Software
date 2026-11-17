@@ -1,4 +1,4 @@
-import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc } from 'firebase/firestore'
+import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc, increment, runTransaction } from 'firebase/firestore'
 import { firestore } from '../firebase'
 import { getDateYearsAgo, isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { omitId } from '../utils/omitId'
@@ -13,7 +13,7 @@ import { VotePayload } from './firebaseElectionFacade'
 
 export const maxDeputyDoB = () => getDateYearsAgo(MINIMUM_DEPUTY_AGE)
 
-type DeputyPayload = Extract<VotePayload, { type: 'deputy' }>;
+type DeputyPayload = VotePayload & { type: 'deputy' }
 
 export class FirebaseDeputyRepository {
   async findById(id: string): Promise<EleicaoDeputado | null> {
@@ -231,5 +231,54 @@ export class FirebaseDeputyRepository {
     }
   }
 
-  registerVote(id: string, domain: DeputyPayload){}
+  async registerVote(id: string, domain: DeputyPayload): Promise<void> {
+    const electionRef = doc(firestore, ELECTION_COLLECTION, id)
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const snapshot = await transaction.get(electionRef)
+
+        if (!snapshot.exists()) {
+          throw new Error('Documento não encontrado.')
+        }
+
+        const electionData = snapshot.data()
+
+        if (
+          electionData?.type !== 'deputy'
+          || typeof electionData?.votosBrancos !== 'number'
+          || typeof electionData?.votosNulos !== 'number'
+        ) {
+          throw new Error('Documento inválido para eleição para deputado.')
+        }
+
+        // Voto em Branco
+        if (domain.candidateNumber === 0) {
+          transaction.update(electionRef, {
+            votosBrancos: increment(1),
+          })
+          return
+        }
+
+        // Procura na subcoleção via repositório de votos e incrementa se existir
+        const existCandidate = await firebaseVotesCandidate.incrementVoteInTransaction(
+          transaction,
+          id,
+          ELECTION_COLLECTION,
+          domain.candidateNumber,
+        )
+
+        // Voto Nulo (caso não exista candidato com o número informado)
+        if (!existCandidate) {
+          transaction.update(electionRef, {
+            votosNulos: increment(1),
+          })
+        }
+      })
+    }
+    catch (error) {
+      console.error('Erro ao registrar voto:', error)
+      throw error
+    }
+  }
 }

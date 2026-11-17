@@ -9,7 +9,7 @@ import { validateDraft } from '@/schemas/electionDraftSchema'
 import { ELECTION_COLLECTION } from '../constants/firebase'
 import { VotePayload } from './firebaseElectionFacade'
 
-  type PublicConsultationPayload = Extract<VotePayload, { type: 'public-consultation' }>;
+type PublicConsultationPayload = Extract<VotePayload, { type: 'public-consultation' }>
 
 export class FirebasePublicConsultationRepository {
   // async findAll(): Promise<ConsultaPublica[]> {}
@@ -163,8 +163,8 @@ export class FirebasePublicConsultationRepository {
     }
   }
 
-  async registerVote(id: string, domain: PublicConsultationPayload): Promise<void>{
-    const electionRef = doc(firestore, ELECTION_COLLECTION, id);
+  async registerVote(id: string, domain: PublicConsultationPayload): Promise<void> {
+    const electionRef = doc(firestore, ELECTION_COLLECTION, id)
 
     try {
       await runTransaction(firestore, async (transaction) => {
@@ -177,9 +177,9 @@ export class FirebasePublicConsultationRepository {
         const electionData = snapshot.data()
 
         if (
-          electionData?.type !== 'public-consultation' ||
-          typeof electionData?.sim !== 'number' ||
-          typeof electionData?.nao !== 'number'
+          electionData?.type !== 'public-consultation'
+          || typeof electionData?.sim !== 'number'
+          || typeof electionData?.nao !== 'number'
         ) {
           throw new Error('Documento inválido para consulta pública.')
         }
@@ -193,7 +193,8 @@ export class FirebasePublicConsultationRepository {
       })
 
       return
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Erro ao registrar voto:', error)
       throw error
     }

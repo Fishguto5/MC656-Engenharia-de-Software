@@ -15,7 +15,7 @@ export const maxPresidentDoB = () => {
   return getDateYearsAgo(MINIMUM_PRESIDENT_AGE)
 }
 
-type PresidentPayload = Extract<VotePayload, { type: 'president' }>;
+type PresidentPayload = VotePayload & { type: 'president' }
 
 export class FirebasePresidentRepository {
   async findById(id: string): Promise<EleicaoPresidente | null> {
@@ -233,9 +233,9 @@ export class FirebasePresidentRepository {
         const electionData = snapshot.data()
 
         if (
-          electionData?.type !== 'president' ||
-          typeof electionData?.votosBrancos !== 'number' ||
-          typeof electionData?.votosNulos !== 'number'
+          electionData?.type !== 'president'
+          || typeof electionData?.votosBrancos !== 'number'
+          || typeof electionData?.votosNulos !== 'number'
         ) {
           throw new Error('Documento inválido para eleição presidencial.')
         }
