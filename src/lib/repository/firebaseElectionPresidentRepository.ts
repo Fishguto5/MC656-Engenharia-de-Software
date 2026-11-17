@@ -1,5 +1,5 @@
 import { ElectionStatus, EleicaoPresidenteDocument } from '@/interfaces/firebaseInterfaces'
-import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc } from 'firebase/firestore'
+import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc, runTransaction, increment } from 'firebase/firestore'
 import { firestore } from '../firebase'
 import { getDateYearsAgo, isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { omitId } from '../utils/omitId'
@@ -35,7 +35,10 @@ export class FirebasePresidentRepository {
       const eleicao = presidentAdapter.fromDB(rawData)
 
       // Busca os candidatos correspondentes na subcoleção usando ELECTION_COLLECTION
-      eleicao.candidatos = await firebaseVotesCandidate.findByElectionId(id, ELECTION_COLLECTION)
+      const candidatos = await firebaseVotesCandidate.findByElectionId(id, ELECTION_COLLECTION)
+      if (candidatos && candidatos.length > 0) {
+        eleicao.candidatos = candidatos
+      }
 
       return eleicao
     }
@@ -216,5 +219,54 @@ export class FirebasePresidentRepository {
     }
   }
 
-  registerVote(id: string, domain: PresidentPayload){}
+  async registerVote(id: string, domain: PresidentPayload): Promise<void> {
+    const electionRef = doc(firestore, ELECTION_COLLECTION, id)
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const snapshot = await transaction.get(electionRef)
+
+        if (!snapshot.exists()) {
+          throw new Error('Documento não encontrado.')
+        }
+
+        const electionData = snapshot.data()
+
+        if (
+          electionData?.type !== 'president' ||
+          typeof electionData?.votosBrancos !== 'number' ||
+          typeof electionData?.votosNulos !== 'number'
+        ) {
+          throw new Error('Documento inválido para eleição presidencial.')
+        }
+
+        // Voto em Branco
+        if (domain.candidateNumber === 0) {
+          transaction.update(electionRef, {
+            votosBrancos: increment(1),
+          })
+          return
+        }
+
+        // Procura na subcoleção via repositório de votos e incrementa se existir
+        const existCandidate = await firebaseVotesCandidate.incrementVoteInTransaction(
+          transaction,
+          id,
+          ELECTION_COLLECTION,
+          domain.candidateNumber,
+        )
+
+        // Voto Nulo (caso não exista candidato com o número informado)
+        if (!existCandidate) {
+          transaction.update(electionRef, {
+            votosNulos: increment(1),
+          })
+        }
+      })
+    }
+    catch (error) {
+      console.error('Erro ao registrar voto:', error)
+      throw error
+    }
+  }
 }

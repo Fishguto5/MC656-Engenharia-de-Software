@@ -166,36 +166,36 @@ export class FirebasePublicConsultationRepository {
   async registerVote(id: string, domain: PublicConsultationPayload): Promise<void>{
     const electionRef = doc(firestore, ELECTION_COLLECTION, id);
 
-      try {
-        await runTransaction(firestore, async (transaction) => {
-          const snapshot = await transaction.get(electionRef)
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const snapshot = await transaction.get(electionRef)
 
-          if (!snapshot.exists()) {
-            throw new Error('Documento não encontrado.')
-          }
+        if (!snapshot.exists()) {
+          throw new Error('Documento não encontrado.')
+        }
 
-          const electionData = snapshot.data()
+        const electionData = snapshot.data()
 
-          if (
-            electionData?.type !== 'public-consultation' ||
-            typeof electionData?.sim !== 'number' ||
-            typeof electionData?.nao !== 'number'
-          ) {
-            throw new Error('Documento inválido para consulta pública.')
-          }
+        if (
+          electionData?.type !== 'public-consultation' ||
+          typeof electionData?.sim !== 'number' ||
+          typeof electionData?.nao !== 'number'
+        ) {
+          throw new Error('Documento inválido para consulta pública.')
+        }
 
-          // Define dinamicamente qual campo incrementar
-          const fieldToIncrement = domain.proposalApproved ? 'sim' : 'nao'
+        // Define dinamicamente qual campo incrementar
+        const fieldToIncrement = domain.proposalApproved ? 'sim' : 'nao'
 
-          transaction.update(electionRef, {
-            [fieldToIncrement]: increment(1),
-          })
+        transaction.update(electionRef, {
+          [fieldToIncrement]: increment(1),
         })
+      })
 
-        return
-      } catch (error) {
-        console.error('Erro ao registrar voto:', error)
-        throw error
-      }
+      return
+    } catch (error) {
+      console.error('Erro ao registrar voto:', error)
+      throw error
+    }
   }
 }
