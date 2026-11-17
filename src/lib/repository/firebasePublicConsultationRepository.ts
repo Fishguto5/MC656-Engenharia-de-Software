@@ -1,5 +1,5 @@
 import { ConsultaPublica } from '@/interfaces/eleicaoInterfaces'
-import { collection, doc, updateDoc, getDoc, addDoc, Timestamp, serverTimestamp, setDoc } from 'firebase/firestore'
+import { collection, doc, updateDoc, getDoc, addDoc, Timestamp, serverTimestamp, setDoc, increment, runTransaction } from 'firebase/firestore'
 import { firestore } from '../firebase'
 import { publicConsultationAdapter, PublicConsultationRawDocument } from '../adapter/firebasePublicConsultationAdapter'
 import { ConsultaPublicaDocument, ElectionStatus, LocalConsulta } from '@/interfaces/firebaseInterfaces'
@@ -7,6 +7,9 @@ import { omitId } from '../utils/omitId'
 import { isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { validateDraft } from '@/schemas/electionDraftSchema'
 import { ELECTION_COLLECTION } from '../constants/firebase'
+import { VotePayload } from './firebaseElectionFacade'
+
+  type PublicConsultationPayload = Extract<VotePayload, { type: 'public-consultation' }>;
 
 export class FirebasePublicConsultationRepository {
   // async findAll(): Promise<ConsultaPublica[]> {}
@@ -93,7 +96,7 @@ export class FirebasePublicConsultationRepository {
   async update(domain: ConsultaPublica): Promise<void> {
     const dbData = publicConsultationAdapter.toDB(domain)
 
-    // Verificar Idade
+    // Verificar Data
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
       return
     }
@@ -158,5 +161,41 @@ export class FirebasePublicConsultationRepository {
       console.error('Erro ao salvar rascunho de consulta pública:', error)
       throw error
     }
+  }
+
+  async registerVote(id: string, domain: PublicConsultationPayload): Promise<void>{
+    const electionRef = doc(firestore, ELECTION_COLLECTION, id);
+
+      try {
+        await runTransaction(firestore, async (transaction) => {
+          const snapshot = await transaction.get(electionRef)
+
+          if (!snapshot.exists()) {
+            throw new Error('Documento não encontrado.')
+          }
+
+          const electionData = snapshot.data()
+
+          if (
+            electionData?.type !== 'public-consultation' ||
+            typeof electionData?.sim !== 'number' ||
+            typeof electionData?.nao !== 'number'
+          ) {
+            throw new Error('Documento inválido para consulta pública.')
+          }
+
+          // Define dinamicamente qual campo incrementar
+          const fieldToIncrement = domain.proposalApproved ? 'sim' : 'nao'
+
+          transaction.update(electionRef, {
+            [fieldToIncrement]: increment(1),
+          })
+        })
+
+        return
+      } catch (error) {
+        console.error('Erro ao registrar voto:', error)
+        throw error
+      }
   }
 }

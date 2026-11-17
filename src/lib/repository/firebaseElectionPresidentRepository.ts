@@ -9,10 +9,13 @@ import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
 import { validateDraft } from '@/schemas/electionDraftSchema'
 import { MINIMUM_PRESIDENT_AGE } from '../constants/election'
 import { ELECTION_COLLECTION } from '../constants/firebase'
+import { VotePayload } from './firebaseElectionFacade'
 
 export const maxPresidentDoB = () => {
   return getDateYearsAgo(MINIMUM_PRESIDENT_AGE)
 }
+
+type PresidentPayload = Extract<VotePayload, { type: 'president' }>;
 
 export class FirebasePresidentRepository {
   async findById(id: string): Promise<EleicaoPresidente | null> {
@@ -212,4 +215,6 @@ export class FirebasePresidentRepository {
       throw error
     }
   }
+
+  registerVote(id: string, domain: PresidentPayload){}
 }

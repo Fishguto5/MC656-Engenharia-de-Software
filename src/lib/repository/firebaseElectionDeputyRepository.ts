@@ -9,8 +9,11 @@ import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
 import { validateDraft } from '@/schemas/electionDraftSchema'
 import { MINIMUM_DEPUTY_AGE, UF } from '../constants/election'
 import { ELECTION_COLLECTION } from '../constants/firebase'
+import { VotePayload } from './firebaseElectionFacade'
 
 export const maxDeputyDoB = () => getDateYearsAgo(MINIMUM_DEPUTY_AGE)
+
+type DeputyPayload = Extract<VotePayload, { type: 'deputy' }>;
 
 export class FirebaseDeputyRepository {
   async findById(id: string): Promise<EleicaoDeputado | null> {
@@ -227,4 +230,6 @@ export class FirebaseDeputyRepository {
       throw error
     }
   }
+
+  registerVote(id: string, domain: DeputyPayload){}
 }
