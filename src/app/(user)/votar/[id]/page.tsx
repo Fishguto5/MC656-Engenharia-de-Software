@@ -1,6 +1,7 @@
 'use client';
 
 import { ConsultaPublicaVotarForm } from '@/components/VotarForm/ConsultaPublicaVotar';
+import { PresidenteVotarForm } from '@/components/VotarForm/PresidenteVotar';
 import { ConsultaPublica, EleicaoDeputado, EleicaoPresidente } from '@/interfaces/eleicaoInterfaces';
 import { firebaseElection, VotePayload } from '@/lib/repository/firebaseElectionFacade';
 import { useParams } from 'next/navigation';
@@ -57,11 +58,11 @@ export default function VotacaoPage() {
         <ConsultaPublicaVotarForm election={electionData} onSubmit={handleVoteSubmit} />
       )}
 
-      {/* {electionData.type === 'president' && (
+      {electionData.type === 'president' && (
         <PresidenteVotarForm election={electionData} onSubmit={handleVoteSubmit} />
       )}
 
-      {electionData.type === 'deputy' && (
+      {/* {electionData.type === 'deputy' && (
         <DeputadoVotarForm election={electionData} onSubmit={handleVoteSubmit} />
       )} */}
     </main>
