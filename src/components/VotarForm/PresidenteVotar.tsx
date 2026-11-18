@@ -8,7 +8,8 @@ interface Props {
 }
 
 export function PresidenteVotarForm({ election, onSubmit }: Props) {
-  const [nummber, setNumer] = useState<number | undefined>(0)
+  const [number, setNumber] = useState<number | undefined>(0)
+  const candidato = election.candidatos.filter((cand) => cand.numero === number)
 
   function formatDate(date: Date): string {
     const day = String(date.getDate()).padStart(2, '0')
@@ -20,13 +21,13 @@ export function PresidenteVotarForm({ election, onSubmit }: Props) {
 
   const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault()
-    if (nummber === undefined) return
-    console.log(nummber)
-    onSubmit({ type: 'president', candidateNumber: nummber })
+    if (number === undefined) return
+    console.log(number)
+    onSubmit({ type: 'president', candidateNumber: number })
   }
 
   const handleFieldChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setNumer(parseInt(e.target.value))
+    setNumber(parseInt(e.target.value))
   }
 
   return (
@@ -53,11 +54,20 @@ export function PresidenteVotarForm({ election, onSubmit }: Props) {
           type="number"
           name="president"
           id="president"
-          value={nummber}
+          value={number}
           onChange={handleFieldChange}
           min={0}
         />
       </fieldset>
+
+      {(candidato.length > 0) && (
+        <div className={styles.card}>
+          <h2 className={styles.nome}>{candidato[0].nome}</h2>
+          <p className={styles.badge}>
+            {candidato[0].partido}
+          </p>
+        </div>
+      )}
 
       <div className="VotarForm-btn-container">
         <button type="reset" className="primary-btn cancel-btn">Cancelar</button>
