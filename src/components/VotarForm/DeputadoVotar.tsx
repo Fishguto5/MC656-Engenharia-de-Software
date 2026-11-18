@@ -8,8 +8,8 @@ interface Props {
 }
 
 export function DeputadoVotarForm({ election, onSubmit }: Props) {
-  const [number, setNumber] = useState<number | undefined>(0)
-  const candidato = election.candidatos.filter((cand) => cand.numero === number)
+  const [number, setNumber] = useState<number>(0)
+  const candidato = election.candidatos.filter(cand => cand.numero === number)
 
   function formatDate(date: Date): string {
     const day = String(date.getDate()).padStart(2, '0')
@@ -21,13 +21,13 @@ export function DeputadoVotarForm({ election, onSubmit }: Props) {
 
   const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault()
-    if (number === undefined) return
     console.log(number)
     onSubmit({ type: 'deputy', candidateNumber: number })
   }
 
   const handleFieldChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setNumber(parseInt(e.target.value))
+    const texto = e.target.value
+    setNumber(texto === '' ? 0 : Number(texto))
   }
 
   return (
@@ -64,14 +64,30 @@ export function DeputadoVotarForm({ election, onSubmit }: Props) {
         />
       </fieldset>
 
-      {(candidato.length > 0) && (
-        <div className={styles.card}>
-          <h2 className={styles.nome}>{candidato[0].nome}</h2>
-          <p className={styles.badge}>
-            {candidato[0].federacao || candidato[0].partido}
-          </p>
-        </div>
-      )}
+      <div className="flex w-full justify-center">
+        {candidato.length > 0
+          ? (
+              <div className={styles.card}>
+                <h2 className={styles.nome}>{candidato[0].nome}</h2>
+                <p className={styles.badge}>
+                  {candidato[0].federacao || candidato[0].partido}
+                </p>
+              </div>
+            )
+          : number === 0
+            ? (
+                <div className={styles.card}>
+                  <h2 className={styles.nome}>Voto em Branco</h2>
+                </div>
+              )
+            : number
+              ? (
+                  <div className={styles.card}>
+                    <h2 className={styles.nome}>Voto Nulo</h2>
+                  </div>
+                )
+              : null}
+      </div>
 
       <div className="VotarForm-btn-container">
         <button type="reset" className="primary-btn cancel-btn">Cancelar</button>
