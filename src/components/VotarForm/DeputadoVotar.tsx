@@ -27,7 +27,18 @@ export function DeputadoVotarForm({ election, onSubmit }: Props) {
 
   const handleFieldChange = (e: ChangeEvent<HTMLInputElement>) => {
     const texto = e.target.value
-    setNumber(texto === '' ? 0 : Number(texto))
+
+    if (texto === '') {
+      setNumber(0)
+      return
+    }
+
+    const num = Number(texto)
+    if (Number.isNaN(num)) {
+      setNumber(0)
+      return
+    }
+    setNumber(num < 0 ? -num : num)
   }
 
   return (
