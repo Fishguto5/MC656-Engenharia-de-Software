@@ -17,8 +17,6 @@ const DeputyRawSchema = z.object({
   updatedAt: z.union([z.instanceof(Timestamp), z.string()]),
   type: z.literal('deputy'),
   uf: z.string(),
-  agremiacoes: z.array(z.string()),
-  votosLegenda: z.record(z.string(), z.number()).default({}),
   votosBrancos: z.number().default(0),
   votosNulos: z.number().default(0),
 })
@@ -40,20 +38,15 @@ class DeputyAdapter implements DatabaseAdapter<EleicaoDeputadoDocument, EleicaoD
       updatedAt: RawDocumentTimeToDate(parsed.updatedAt),
       type: 'deputy',
       uf: parsed.uf as UF,
-      agremiacoes: parsed.agremiacoes,
+      agremiacoes: [], // Preenchido pelo repositório
       candidatos: [], // Preenchido pelo repositório a partir da subcoleção
-      votosLegenda: parsed.votosLegenda,
+      votosLegenda: {}, // Preenchido pelo repositório
       votosBrancos: parsed.votosBrancos,
       votosNulos: parsed.votosNulos,
     }
   }
 
   toDB(domain: EleicaoDeputado): EleicaoDeputadoDocument {
-    // Normaliza votosLegenda se vier como Map em vez de Record plano
-    const votosLegendaObj = domain.votosLegenda instanceof Map
-      ? Object.fromEntries(domain.votosLegenda)
-      : (domain.votosLegenda || {})
-
     return {
       id: domain.id,
       title: domain.title,
@@ -65,8 +58,6 @@ class DeputyAdapter implements DatabaseAdapter<EleicaoDeputadoDocument, EleicaoD
       updatedAt: Timestamp.fromDate(domain.updatedAt),
       type: 'deputy',
       uf: domain.uf,
-      agremiacoes: Array.from(domain.agremiacoes),
-      votosLegenda: votosLegendaObj,
       votosBrancos: domain.votosBrancos,
       votosNulos: domain.votosNulos,
     }
