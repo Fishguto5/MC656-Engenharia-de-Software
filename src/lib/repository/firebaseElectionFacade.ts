@@ -10,6 +10,9 @@ import { ELECTION_COLLECTION } from '../constants/firebase'
 
 // União de todos os domínios aceitos
 export type EleicaoDomain = EleicaoPresidente | EleicaoDeputado | ConsultaPublica
+export type VotePayload
+  = | { type: 'president' | 'deputy', candidateNumber: number }
+    | { type: 'public-consultation', proposalApproved: boolean }
 
 class FirebaseElectionFacade {
   // Repositórios
@@ -24,6 +27,22 @@ class FirebaseElectionFacade {
       'deputy': this.firebaseDeputy,
       'public-consultation': this.firebasePublicConsultation,
     }
+  }
+
+  async getType(id: string): Promise<ElectionType | null> {
+    const electionRef = doc(firestore, ELECTION_COLLECTION, id)
+    const snapshot = await getDoc(electionRef)
+
+    // Verificar se o doc existe
+    if (!snapshot.exists()) return null
+
+    // Retorna o tipo da eleição
+    const electionData = snapshot.data()
+    if (!electionData?.type || !VALID_ELECTION_TYPE.has(electionData.type)) {
+      return null
+    }
+
+    return electionData.type as ElectionType
   }
 
   async getDraftType(id: string): Promise<ElectionType | null> {
@@ -75,6 +94,12 @@ class FirebaseElectionFacade {
     const repo = this.repositories[type]
     if (!repo) throw new Error(`Repositório não encontrado para o tipo: ${type}`)
     return repo.update(domain as never)
+  }
+
+  async registerVote(id: string, domain: VotePayload): Promise<void> {
+    const repo = this.repositories[domain.type]
+    if (!repo) throw new Error(`Repositório não encontrado para o tipo: ${domain.type}`)
+    return repo.registerVote(id, domain as never)
   }
 }
 

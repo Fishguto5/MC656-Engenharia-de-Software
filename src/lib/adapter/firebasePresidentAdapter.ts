@@ -15,7 +15,6 @@ const PresidentRawSchema = z.object({
   createdAt: z.union([z.instanceof(Timestamp), z.string()]),
   updatedAt: z.union([z.instanceof(Timestamp), z.string()]),
   type: z.literal('president'),
-  candidatosIds: z.array(z.string()),
   turno: z.number(),
   votosBrancos: z.number(),
   votosNulos: z.number(),
@@ -42,7 +41,7 @@ class PresidentAdapter implements DatabaseAdapter<EleicaoPresidenteDocument, Ele
       createdAt,
       updatedAt,
       type: 'president',
-      candidatos: [], // O preenchimento dos detalhes dos candidatos é feito no repositório combinando com 'candidatosIds'
+      candidatos: [], // O preenchimento dos detalhes dos candidatos é feito no repositório via subcoleção
       turno: parsed.turno,
       votosBrancos: parsed.votosBrancos,
       votosNulos: parsed.votosNulos,

@@ -1,0 +1,54 @@
+.formField {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* grid-template-columns: 150px 1fr; */
+  margin: 0 150px 20px;
+  gap: 12px;
+}
+
+.formField label {
+  font-size: clamp(1.125rem, 1.5vw + 0.75rem, 1.5rem);
+}
+
+.formField input[type="number"] {
+  font-size: clamp(1.125rem, 1.5vw + 0.75rem, 1.5rem);
+  width: 120px;
+}
+
+.card {
+  width: 100%;
+  max-width: 340px;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.nome {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.badge {
+  display: inline-block;
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  background-color: #f1f5f9;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
