@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 
 function formatCpf(value: string) {
   return value.replace(/\D/g, '').slice(0, 11)
@@ -11,7 +10,6 @@ function formatCpf(value: string) {
 }
 
 export default function AdminLoginPage() {
-  const router = useRouter()
   const [cpf, setCpf] = useState('')
   const [message, setMessage] = useState('')
   const [pending, setPending] = useState(false)
@@ -26,6 +24,7 @@ export default function AdminLoginPage() {
       const response = await fetch('/api/admin/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ cpf }),
       })
       if (!response.ok) {
@@ -33,8 +32,7 @@ export default function AdminLoginPage() {
         setMessage(result.error ?? 'Não foi possível autenticar. Tente novamente.')
         return
       }
-      router.replace('/admin')
-      router.refresh()
+      window.location.replace('/admin')
     }
     catch {
       setMessage('Não foi possível autenticar. Tente novamente.')
