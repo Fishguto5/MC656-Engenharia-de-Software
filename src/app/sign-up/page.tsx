@@ -1,5 +1,7 @@
 'use client'
 
+import { saveVoterSession } from '@/lib/voterSession'
+import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 
 function onlyDigits(value: string) {
@@ -40,35 +42,39 @@ export function formatCpf(value: string) {
 }
 
 export default function SignUpPage() {
+  const router = useRouter()
   const [cpf, setCpf] = useState('')
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
-  const [isSuccess, setIsSuccess] = useState(false)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const trimmedName = name.trim()
 
     if (!trimmedName) {
-      setIsSuccess(false)
       setMessage('Informe seu nome.')
       return
     }
 
     if (!isValidCpf(cpf)) {
-      setIsSuccess(false)
       setMessage('Informe um CPF válido.')
       return
     }
 
-    setIsSuccess(true)
-    setMessage('CPF validado com sucesso.')
+    setMessage('')
+    try {
+      saveVoterSession({ cpf: onlyDigits(cpf), name: trimmedName })
+      router.push('/eleicoes')
+    }
+    catch {
+      setMessage('Não foi possível acessar as eleições. Tente novamente.')
+    }
   }
 
   return (
     <main className="signup-page">
       <section className="signup-card" aria-labelledby="signup-title">
-        <h1 id="signup-title">ÁREA DO ADMINISTRADOR</h1>
+        <h1 id="signup-title">ÁREA DO ELEITOR</h1>
 
         <form className="signup-form" onSubmit={handleSubmit} noValidate>
           <div className="form-field">
@@ -104,8 +110,8 @@ export default function SignUpPage() {
           {message && (
             <p
               id="form-message"
-              className={isSuccess ? 'form-message success' : 'form-message'}
-              role="status"
+              className="form-message"
+              role="alert"
             >
               {message}
             </p>

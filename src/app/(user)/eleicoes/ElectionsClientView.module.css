@@ -29,6 +29,10 @@
   border-left: 4px solid #333333;
 }
 
+.notice > p {
+  margin-bottom: 16px;
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -141,11 +145,6 @@ a.highlight:focus-visible {
   background: #333333;
   color: #ffffff;
   font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.eligibleLabel {
-  font-size: 0.875rem;
   font-weight: 700;
 }
 

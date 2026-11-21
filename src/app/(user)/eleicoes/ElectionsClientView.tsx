@@ -1,10 +1,11 @@
 'use client'
 
 import type { ElectionStatus } from '@/interfaces/firebaseInterfaces'
-import { LISTA_UFS, type ElectionType, type UF, VALID_ELECTION_TYPE } from '@/lib/constants/election'
+import { type ElectionType, VALID_ELECTION_TYPE } from '@/lib/constants/election'
 import { ELECTION_COLLECTION } from '@/lib/constants/firebase'
 import { firestore } from '@/lib/firebase'
-import { collection, doc, getDoc, getDocs, type DocumentData } from 'firebase/firestore'
+import { readVoterSession, type VoterSession } from '@/lib/voterSession'
+import { collection, getDocs, type DocumentData } from 'firebase/firestore'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import styles from './ElectionsClientView.module.css'
@@ -17,8 +18,6 @@ type ListedElection = {
   status: Exclude<ElectionStatus, 'draft'>
   startsAt: Date | null
   endsAt: Date | null
-  uf?: UF
-  local?: UF | 'Brasil'
 }
 
 const statusLabels: Record<ListedElection['status'], string> = {
@@ -39,10 +38,6 @@ const statusOrder: Record<ListedElection['status'], number> = {
   scheduled: 1,
   closed: 2,
   cancelled: 3,
-}
-
-function isUf(value: unknown): value is UF {
-  return LISTA_UFS.some(uf => uf === value)
 }
 
 function readDate(value: unknown): Date | null {
@@ -66,38 +61,7 @@ function toListedElection(id: string, data: DocumentData): ListedElection | null
     status: data.status as ListedElection['status'],
     startsAt: readDate(data.startsAt),
     endsAt: readDate(data.endsAt),
-    uf: isUf(data.uf) ? data.uf : undefined,
-    local: data.local === 'Brasil' || isUf(data.local) ? data.local : undefined,
   }
-}
-
-function getStoredCpf(): string | null {
-  try {
-    const saved = JSON.parse(localStorage.getItem('auth:user') ?? 'null') as unknown
-    if (!saved || typeof saved !== 'object' || !('cpf' in saved) || typeof saved.cpf !== 'string') return null
-    const cpf = saved.cpf.replace(/\D/g, '')
-    return cpf.length === 11 ? cpf : null
-  }
-  catch {
-    return null
-  }
-}
-
-async function getVoterUf(): Promise<{ identified: boolean, uf: UF | null }> {
-  const cpf = getStoredCpf()
-  if (!cpf) return { identified: false, uf: null }
-
-  const voter = await getDoc(doc(firestore, 'users', cpf))
-  if (!voter.exists() || voter.data().isAdmin === true) return { identified: false, uf: null }
-
-  return { identified: true, uf: isUf(voter.data().uf) ? voter.data().uf : null }
-}
-
-function isEligible(election: ListedElection, identified: boolean, voterUf: UF | null): boolean {
-  if (!identified) return false
-  if (election.type === 'president') return true
-  if (election.type === 'deputy') return voterUf !== null && election.uf === voterUf
-  return election.local === 'Brasil' || (voterUf !== null && election.local === voterUf)
 }
 
 function formatDate(date: Date | null): string | null {
@@ -106,25 +70,23 @@ function formatDate(date: Date | null): string | null {
 
 export default function ElectionsClientView() {
   const [elections, setElections] = useState<ListedElection[]>([])
-  const [voter, setVoter] = useState<{ identified: boolean, uf: UF | null }>({ identified: false, uf: null })
+  const [voter, setVoter] = useState<VoterSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
   useEffect(() => {
     let active = true
+    const voterSession = readVoterSession()
 
     async function loadElections() {
       try {
-        const [electionsSnapshot, voterData] = await Promise.all([
-          getDocs(collection(firestore, ELECTION_COLLECTION)),
-          getVoterUf().catch(() => ({ identified: false, uf: null })),
-        ])
+        const electionsSnapshot = await getDocs(collection(firestore, ELECTION_COLLECTION))
 
         if (!active) return
         setElections(electionsSnapshot.docs
           .map(snapshot => toListedElection(snapshot.id, snapshot.data()))
           .filter((election): election is ListedElection => election !== null))
-        setVoter(voterData)
+        setVoter(voterSession)
       }
       catch (cause) {
         console.error('Erro ao carregar eleições:', cause)
@@ -140,35 +102,31 @@ export default function ElectionsClientView() {
   }, [])
 
   const sortedElections = [...elections].sort((a, b) => {
-    const aEligible = isEligible(a, voter.identified, voter.uf) && a.status === 'open'
-    const bEligible = isEligible(b, voter.identified, voter.uf) && b.status === 'open'
-    if (aEligible !== bEligible) return aEligible ? -1 : 1
     return statusOrder[a.status] - statusOrder[b.status]
       || (a.startsAt?.getTime() ?? 0) - (b.startsAt?.getTime() ?? 0)
   })
-  const readyToVote = sortedElections.filter(election => election.status === 'open' && isEligible(election, voter.identified, voter.uf)).length
+  const readyToVote = voter ? sortedElections.filter(election => election.status === 'open').length : 0
 
   return (
     <main className="signup-candidate-page">
       <section className="candidate-list">
         <header>
           <h1>Lista de Eleições</h1>
-          <p className={styles.intro}>Veja o tipo e o status de cada votação. As eleições abertas para você aparecem primeiro.</p>
+          <p className={styles.intro}>Veja o tipo e o status de cada votação. As votações abertas aparecem primeiro.</p>
         </header>
 
-        {!loading && !error && voter.identified && (
+        {!loading && !error && voter && (
           <div className={styles.summary} role="status">
             <span className={styles.summaryCount}>{readyToVote}</span>
-            <span>{readyToVote === 1 ? 'votação disponível para você agora' : 'votações disponíveis para você agora'}</span>
+            <span>{readyToVote === 1 ? 'votação disponível agora' : 'votações disponíveis agora'}</span>
           </div>
         )}
 
-        {!loading && !error && !voter.identified && (
-          <p className={styles.notice}>Identifique-se como eleitor para consultar sua aptidão e acessar as votações.</p>
-        )}
-
-        {!loading && !error && voter.identified && !voter.uf && (
-          <p className={styles.notice}>Sua UF não está cadastrada. A aptidão para votações estaduais não pode ser confirmada.</p>
+        {!loading && !error && !voter && (
+          <div className={styles.notice}>
+            <p>Informe seu CPF e nome para acessar as votações abertas.</p>
+            <Link href="/sign-up">Ir para identificação</Link>
+          </div>
         )}
 
         {loading && <p className={styles.stateMessage} role="status">Carregando eleições...</p>}
@@ -178,9 +136,7 @@ export default function ElectionsClientView() {
         {!loading && !error && sortedElections.length > 0 && (
           <section aria-label="Lista de eleições" className={styles.list}>
             {sortedElections.map((election) => {
-              const eligible = isEligible(election, voter.identified, voter.uf)
-              const canVote = eligible && election.status === 'open'
-              const shouldHighlight = eligible && (election.status === 'open' || election.status === 'scheduled')
+              const canVote = voter !== null && election.status === 'open'
               const startsAt = formatDate(election.startsAt)
               const endsAt = formatDate(election.endsAt)
 
@@ -200,14 +156,13 @@ export default function ElectionsClientView() {
                       {startsAt && endsAt ? `${startsAt} a ${endsAt}` : startsAt ?? endsAt ?? 'Período não informado'}
                     </span>
                     {canVote && <span className={styles.action}>Votar <span aria-hidden="true">→</span></span>}
-                    {!canVote && eligible && election.status === 'scheduled' && <span className={styles.eligibleLabel}>Você está apto</span>}
                   </div>
                 </>
               )
 
               return canVote
-                ? <Link key={election.id} href={`/votar/${election.id}`} className={`${styles.card} ${styles.highlight}`}>{content}</Link>
-                : <article key={election.id} className={`${styles.card} ${shouldHighlight ? styles.highlight : ''}`}>{content}</article>
+                ? <Link key={election.id} href={`/votar/${election.id}`} className={`${styles.card} ${styles.highlight}`} aria-label={`Votar em ${election.title}`}>{content}</Link>
+                : <article key={election.id} className={styles.card}>{content}</article>
             })}
           </section>
         )}
