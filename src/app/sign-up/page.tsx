@@ -59,7 +59,11 @@ export default function SignUpPage() {
               autoComplete="off"
               placeholder="000.000.000-00"
               value={cpf}
-              onChange={event => setCpf(formatCpf(event.target.value))}
+              onChange={(event) => {
+                const formattedCpf = formatCpf(event.currentTarget.value)
+                event.currentTarget.value = formattedCpf
+                setCpf(formattedCpf)
+              }}
               aria-describedby={message ? 'form-message' : undefined}
             />
           </div>

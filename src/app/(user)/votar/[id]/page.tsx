@@ -41,11 +41,27 @@ export default function VotacaoPage() {
 
       try {
         const tipoEleicao = await firebaseElection.getType(id)
-        if (!tipoEleicao) return
+        if (!tipoEleicao) {
+          if (isMounted) setMessage('Votação não encontrada ou com tipo inválido.')
+          return
+        }
 
         const eleicao = await firebaseElection.findById(id, tipoEleicao)
-        if (isMounted && eleicao && isVotingOpen(eleicao.status, eleicao.startsAt, eleicao.endsAt)) {
-          setElectionData({ ...eleicao, type: tipoEleicao } as ElectionData)
+        if (!isMounted) return
+        if (!eleicao) {
+          setMessage('Os dados desta votação estão indisponíveis. Tente novamente mais tarde.')
+          return
+        }
+
+        setVoter(voterSession)
+        if (!isElectionAvailableForUf(eleicao, voterSession.uf)) {
+          setMessage('Esta votação não está disponível para a UF do seu domicílio eleitoral.')
+        }
+        else if (!isVotingOpen(eleicao.status, eleicao.startsAt, eleicao.endsAt)) {
+          setMessage('Esta votação não está aberta no momento.')
+        }
+        else {
+          setElectionData(eleicao)
         }
       }
       catch (error) {
@@ -65,8 +81,22 @@ export default function VotacaoPage() {
   }, [id])
 
   const handleVoteSubmit = async (payload: VotePayload) => {
-    if (!electionData) return
+    if (!electionData || !voter) return
+    const currentVoter = readVoterSession()
+    if (!currentVoter || currentVoter.cpf !== voter.cpf || currentVoter.uf !== voter.uf) {
+      setElectionData(null)
+      setMessage('Sua identificação mudou. Identifique-se novamente para votar.')
+      return
+    }
+
     try {
+      const currentElection = await firebaseElection.findById(electionData.id, electionData.type)
+      if (!currentElection || !isElectionAvailableForUf(currentElection, currentVoter.uf)
+        || !isVotingOpen(currentElection.status, currentElection.startsAt, currentElection.endsAt)) {
+        setElectionData(null)
+        setMessage('Esta votação não está disponível para sua UF ou não está aberta no momento.')
+        return
+      }
       await firebaseElection.registerVote(electionData.id, payload)
       alert('Voto registrado com sucesso!')
     }
@@ -77,7 +107,12 @@ export default function VotacaoPage() {
   }
 
   if (loading) return <p>Carregando votação...</p>
-  if (!electionData) return <main className="signup-candidate-page"><p role="alert">{message}</p><Link href={voter ? '/eleicoes' : '/sign-up'}>{voter ? 'Voltar para eleições' : 'Ir para identificação'}</Link></main>
+  if (!electionData) return (
+    <main className="signup-candidate-page">
+      <p role="alert">{message}</p>
+      <Link href={voter ? '/eleicoes' : '/sign-up'}>{voter ? 'Voltar para eleições' : 'Ir para identificação'}</Link>
+    </main>
+  )
 
   return (
     <main className="signup-candidate-page">

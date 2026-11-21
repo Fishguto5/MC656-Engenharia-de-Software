@@ -5,6 +5,8 @@ import { type ElectionType, type UF, VALID_ELECTION_TYPE } from '@/lib/constants
 import { isElectionAvailableForUf, isUf } from '@/lib/electionEligibility'
 import { ELECTION_COLLECTION } from '@/lib/constants/firebase'
 import { firestore } from '@/lib/firebase'
+import { getElectionPhase } from '@/lib/election-timing'
+import { loadPublishedElectionResult } from '@/lib/publishedElectionResult'
 import { readVoterSession, type VoterSession } from '@/lib/voterSession'
 import { collection, getDocs, type DocumentData } from 'firebase/firestore'
 import Link from 'next/link'
@@ -31,8 +33,8 @@ const statusLabels: Record<ListedElection['status'], string> = {
 }
 
 const typeLabels: Record<ElectionType, string> = {
-  president: 'Presidência',
-  deputy: 'Deputado federal',
+  'president': 'Presidência',
+  'deputy': 'Deputado federal',
   'public-consultation': 'Consulta pública',
 }
 
@@ -59,6 +61,9 @@ function toListedElection(id: string, data: DocumentData): ListedElection | null
   if (data.type === 'deputy' && !isUf(data.uf)) return null
   if (data.type === 'public-consultation' && data.local !== 'Brasil' && !isUf(data.local)) return null
 
+  const status = getElectionPhase(data.status, data.startsAt, data.endsAt)
+  if (status === 'draft' || status === 'unknown') return null
+
   return {
     id,
     title: data.title,
@@ -66,7 +71,7 @@ function toListedElection(id: string, data: DocumentData): ListedElection | null
     type: data.type as ElectionType,
     uf: isUf(data.uf) ? data.uf : undefined,
     local: data.local === 'Brasil' || isUf(data.local) ? data.local : undefined,
-    status: data.status as ListedElection['status'],
+    status,
     startsAt: readDate(data.startsAt),
     endsAt: readDate(data.endsAt),
   }
@@ -81,6 +86,7 @@ export default function ElectionsClientView() {
   const [voter, setVoter] = useState<VoterSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [resultAvailability, setResultAvailability] = useState<Record<string, 'published' | 'unpublished' | 'error'>>({})
 
   useEffect(() => {
     let active = true
@@ -91,10 +97,27 @@ export default function ElectionsClientView() {
         const electionsSnapshot = await getDocs(collection(firestore, ELECTION_COLLECTION))
 
         if (!active) return
-        setElections(electionsSnapshot.docs
-          .map(snapshot => toListedElection(snapshot.id, snapshot.data()))
-          .filter((election): election is ListedElection => election !== null)
-          .filter(election => voterSession !== null && isElectionAvailableForUf(election, voterSession.uf)))
+        const visibleSnapshots = electionsSnapshot.docs
+          .map(snapshot => ({ snapshot, election: toListedElection(snapshot.id, snapshot.data()) }))
+          .filter((item): item is { snapshot: typeof electionsSnapshot.docs[number], election: ListedElection } => item.election !== null)
+          .filter(item => voterSession !== null && isElectionAvailableForUf(item.election, voterSession.uf))
+
+        const availabilityEntries = await Promise.all(visibleSnapshots
+          .filter(item => item.election.status === 'closed')
+          .map(async ({ snapshot }) => {
+            try {
+              const result = await loadPublishedElectionResult(snapshot.id, snapshot.data())
+              return [snapshot.id, result ? 'published' : 'unpublished'] as const
+            }
+            catch (cause) {
+              console.error('Erro ao consultar resultado:', cause)
+              return [snapshot.id, 'error'] as const
+            }
+          }))
+
+        if (!active) return
+        setResultAvailability(Object.fromEntries(availabilityEntries))
+        setElections(visibleSnapshots.map(item => item.election))
         setVoter(voterSession)
       }
       catch (cause) {
@@ -107,7 +130,9 @@ export default function ElectionsClientView() {
     }
 
     void loadElections()
-    return () => { active = false }
+    return () => {
+      active = false
+    }
   }, [])
 
   const sortedElections = [...elections].sort((a, b) => {
@@ -146,6 +171,7 @@ export default function ElectionsClientView() {
           <section aria-label="Lista de eleições" className={styles.list}>
             {sortedElections.map((election) => {
               const canVote = voter !== null && election.status === 'open'
+              const canViewResult = election.status === 'closed' && resultAvailability[election.id] === 'published'
               const startsAt = formatDate(election.startsAt)
               const endsAt = formatDate(election.endsAt)
 
@@ -164,14 +190,32 @@ export default function ElectionsClientView() {
                     <span className={styles.dates}>
                       {startsAt && endsAt ? `${startsAt} a ${endsAt}` : startsAt ?? endsAt ?? 'Período não informado'}
                     </span>
-                    {canVote && <span className={styles.action}>Votar <span aria-hidden="true">→</span></span>}
+                    {canVote && (
+                      <span className={styles.action}>
+                        Votar
+                        <span aria-hidden="true">→</span>
+                      </span>
+                    )}
+                    {canViewResult && (
+                      <span className={styles.action}>
+                        Ver resultado
+                        <span aria-hidden="true">→</span>
+                      </span>
+                    )}
+                    {election.status === 'closed' && !canViewResult && (
+                      <span className={styles.resultMessage}>
+                        {resultAvailability[election.id] === 'error' ? 'Não foi possível consultar o resultado' : 'Resultado ainda não publicado'}
+                      </span>
+                    )}
                   </div>
                 </>
               )
 
               return canVote
                 ? <Link key={election.id} href={`/votar/${election.id}`} className={`${styles.card} ${styles.highlight}`} aria-label={`Votar em ${election.title}`}>{content}</Link>
-                : <article key={election.id} className={styles.card}>{content}</article>
+                : canViewResult
+                  ? <Link key={election.id} href={`/eleicoes/${encodeURIComponent(election.id)}/resultado`} className={styles.card} aria-label={`Ver resultado de ${election.title}`}>{content}</Link>
+                  : <article key={election.id} className={styles.card}>{content}</article>
             })}
           </section>
         )}
