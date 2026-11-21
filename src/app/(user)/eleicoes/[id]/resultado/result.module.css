@@ -1,0 +1,81 @@
+.container {
+  max-width: 960px;
+}
+
+.back {
+  color: #333333;
+  display: inline-block;
+  margin-bottom: 24px;
+}
+
+.header {
+  border-bottom: 1px solid #999999;
+  padding-bottom: 20px;
+}
+
+.header h1 {
+  margin: 8px 0 16px;
+}
+
+.header p {
+  color: #444444;
+  margin: 6px 0;
+}
+
+.eyebrow {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.totals > div {
+  border: 1px solid #999999;
+  padding: 16px;
+}
+
+.totals dt {
+  color: #555555;
+  font-size: 0.875rem;
+}
+
+.totals dd {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 8px 0 0;
+}
+
+.section {
+  margin-top: 32px;
+}
+
+.section h2 {
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+}
+
+.rows {
+  border-top: 1px solid #dddddd;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rows li {
+  border-bottom: 1px solid #dddddd;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+@media (max-width: 480px) {
+  .rows li {
+    flex-direction: column;
+  }
+}
