@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Área do Administrador',
-  description: 'Validação de CPF do administrador',
+  title: 'Urna Eletrônica',
+  description: 'Sistema de eleições e votações.',
 }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
