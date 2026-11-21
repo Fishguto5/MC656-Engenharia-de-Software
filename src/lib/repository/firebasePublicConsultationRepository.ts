@@ -8,6 +8,7 @@ import { isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { validateDraft } from '@/schemas/electionDraftSchema'
 import { ELECTION_COLLECTION } from '../constants/firebase'
 import { VotePayload } from './firebaseElectionFacade'
+import { isVotingOpen } from '@/lib/election-timing'
 
 type PublicConsultationPayload = Extract<VotePayload, { type: 'public-consultation' }>
 
@@ -80,6 +81,7 @@ export class FirebasePublicConsultationRepository {
     // Criar data
     const data: Omit<ConsultaPublicaDocument, 'id'> = {
       ...omitId<ConsultaPublicaDocument>(dbData),
+      publishedAllow: false,
       createdAt: serverTimestamp() as unknown as Timestamp,
       updatedAt: serverTimestamp() as unknown as Timestamp,
     }
@@ -143,6 +145,7 @@ export class FirebasePublicConsultationRepository {
       endsAt: endsAtDate ? Timestamp.fromDate(endsAtDate) : null,
       status: 'draft',
       type: 'public-consultation',
+      publishedAllow: false,
       local: domain.local ?? null,
       sim: domain.sim ?? 0,
       nao: domain.nao ?? 0,
@@ -182,6 +185,10 @@ export class FirebasePublicConsultationRepository {
           || typeof electionData?.nao !== 'number'
         ) {
           throw new Error('Documento inválido para consulta pública.')
+        }
+
+        if (!isVotingOpen(electionData.status, electionData.startsAt, electionData.endsAt)) {
+          throw new Error('A votação não está aberta.')
         }
 
         // Define dinamicamente qual campo incrementar

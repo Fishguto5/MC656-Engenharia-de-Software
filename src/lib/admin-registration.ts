@@ -1,16 +1,11 @@
 import 'server-only'
 
-import { applicationDefault, getApps, initializeApp } from 'firebase-admin/app'
-import { getFirestore } from 'firebase-admin/firestore'
+import { getAdminFirestore } from './firebase-admin'
 
 export type AdminRegistrationResult = 'created' | 'promoted' | 'already-admin'
 
 export async function registerAdmin(cpf: string): Promise<AdminRegistrationResult> {
-  const app = getApps()[0] ?? initializeApp({
-    credential: applicationDefault(),
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  })
-  const db = getFirestore(app)
+  const db = getAdminFirestore()
   const reference = db.collection('users').doc(cpf)
 
   return db.runTransaction(async (transaction) => {

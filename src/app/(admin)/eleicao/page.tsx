@@ -1,19 +1,17 @@
 import Link from 'next/link'
-import { collection, getDocs, Timestamp } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
 import { ELECTION_COLLECTION } from '@/lib/constants/firebase'
-import { ElectionStatus } from '@/interfaces/firebaseInterfaces'
 import { ElectionType } from '@/lib/constants/election'
+import { asElectionDate, getElectionPhase, type ElectionPhase } from '@/lib/election-timing'
 import styles from './page.module.css'
-
-type DisplayStatus = ElectionStatus | 'unknown'
 
 type ElectionSummary = {
   id: string
   title: string
   description: string
   type: string
-  status: DisplayStatus
+  status: ElectionPhase
   startsAt: Date | null
   endsAt: Date | null
   createdAt: Date | null
@@ -25,7 +23,7 @@ const typeLabels: Record<ElectionType, string> = {
   'public-consultation': 'Consulta pública',
 }
 
-const statusLabels: Record<DisplayStatus, string> = {
+const statusLabels: Record<ElectionPhase, string> = {
   draft: 'Rascunho',
   scheduled: 'Agendada',
   open: 'Em andamento',
@@ -34,34 +32,14 @@ const statusLabels: Record<DisplayStatus, string> = {
   unknown: 'Status não informado',
 }
 
-const dateFormatter = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' })
-const dayFormatter = new Intl.DateTimeFormat('sv-SE', {
+const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'America/Sao_Paulo',
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
 })
-
-function readDate(value: unknown): Date | null {
-  const date = value instanceof Timestamp
-    ? value.toDate()
-    : value instanceof Date
-      ? value
-      : typeof value === 'string'
-        ? new Date(value)
-        : null
-
-  return date && !Number.isNaN(date.getTime()) ? date : null
-}
-
-function displayStatus(status: unknown, startsAt: Date | null, endsAt: Date | null, today: string): DisplayStatus {
-  if (status === 'draft' || status === 'cancelled' || status === 'closed') return status
-  if (endsAt && dayFormatter.format(endsAt) < today) return 'closed'
-  if (startsAt && dayFormatter.format(startsAt) > today) return 'scheduled'
-  if (startsAt && dayFormatter.format(startsAt) <= today) return 'open'
-  if (status === 'scheduled' || status === 'open') return status
-  return 'unknown'
-}
 
 function formatDate(date: Date | null): string {
   return date ? dateFormatter.format(date) : 'Não informada'
@@ -100,6 +78,9 @@ function ElectionSection({ title, elections, emptyMessage }: {
                   {election.status === 'draft' && (
                     <Link className={styles.editLink} href={`/eleicao/${election.id}/editar`}>Editar rascunho</Link>
                   )}
+                  {election.status === 'closed' && (
+                    <Link className={styles.editLink} href={`/eleicao/${election.id}/resultados`}>Consultar resultados</Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -109,25 +90,25 @@ function ElectionSection({ title, elections, emptyMessage }: {
 }
 
 export default async function ElectionsPage() {
-  const today = dayFormatter.format(new Date())
+  const now = new Date()
   let elections: ElectionSummary[]
 
   try {
     const snapshot = await getDocs(collection(firestore, ELECTION_COLLECTION))
     elections = snapshot.docs.map((document) => {
       const data = document.data()
-      const startsAt = readDate(data.startsAt)
-      const endsAt = readDate(data.endsAt)
+      const startsAt = asElectionDate(data.startsAt)
+      const endsAt = asElectionDate(data.endsAt)
 
       return {
         id: document.id,
         title: typeof data.title === 'string' && data.title.trim() ? data.title : 'Eleição sem título',
         description: typeof data.description === 'string' ? data.description : '',
         type: typeof data.type === 'string' ? data.type : '',
-        status: displayStatus(data.status, startsAt, endsAt, today),
+        status: getElectionPhase(data.status, startsAt, endsAt, now),
         startsAt,
         endsAt,
-        createdAt: readDate(data.createdAt),
+        createdAt: asElectionDate(data.createdAt),
       }
     })
   }

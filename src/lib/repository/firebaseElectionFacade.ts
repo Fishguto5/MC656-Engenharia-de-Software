@@ -97,9 +97,15 @@ class FirebaseElectionFacade {
   }
 
   async registerVote(id: string, domain: VotePayload): Promise<void> {
-    const repo = this.repositories[domain.type]
-    if (!repo) throw new Error(`Repositório não encontrado para o tipo: ${domain.type}`)
-    return repo.registerVote(id, domain as never)
+    const response = await fetch(`/api/elections/${encodeURIComponent(id)}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(domain),
+    })
+    if (!response.ok) {
+      const result = await response.json() as { error?: string }
+      throw new Error(result.error ?? 'Não foi possível registrar o voto.')
+    }
   }
 }
 

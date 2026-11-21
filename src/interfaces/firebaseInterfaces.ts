@@ -14,6 +14,7 @@ export interface BaseElectionDocument {
   createdAt: Timestamp
   updatedAt: Timestamp
   type: ElectionType
+  publishedAllow?: boolean
 }
 
 // 1. Coleção 'candidatos'

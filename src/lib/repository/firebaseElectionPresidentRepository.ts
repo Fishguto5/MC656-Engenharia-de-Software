@@ -10,6 +10,7 @@ import { validateDraft } from '@/schemas/electionDraftSchema'
 import { MINIMUM_PRESIDENT_AGE } from '../constants/election'
 import { ELECTION_COLLECTION } from '../constants/firebase'
 import { VotePayload } from './firebaseElectionFacade'
+import { isVotingOpen } from '@/lib/election-timing'
 
 export const maxPresidentDoB = () => {
   return getDateYearsAgo(MINIMUM_PRESIDENT_AGE)
@@ -97,6 +98,7 @@ export class FirebasePresidentRepository {
 
     const data: Omit<EleicaoPresidenteDocument, 'id'> = {
       ...omitId<EleicaoPresidenteDocument>(dbData),
+      publishedAllow: false,
       createdAt: serverTimestamp() as unknown as Timestamp,
       updatedAt: serverTimestamp() as unknown as Timestamp,
     }
@@ -190,6 +192,7 @@ export class FirebasePresidentRepository {
       endsAt: endsAtDate ? Timestamp.fromDate(endsAtDate) : null,
       status: 'draft',
       type: 'president',
+      publishedAllow: false,
       turno: domain.turno ?? 1,
       votosBrancos: domain.votosBrancos ?? 0,
       votosNulos: domain.votosNulos ?? 0,
@@ -238,6 +241,10 @@ export class FirebasePresidentRepository {
           || typeof electionData?.votosNulos !== 'number'
         ) {
           throw new Error('Documento inválido para eleição presidencial.')
+        }
+
+        if (!isVotingOpen(electionData.status, electionData.startsAt, electionData.endsAt)) {
+          throw new Error('A votação não está aberta.')
         }
 
         // Voto em Branco

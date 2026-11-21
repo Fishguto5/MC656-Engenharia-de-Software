@@ -42,6 +42,14 @@ Para habilitar essa gravação localmente, gere uma chave privada em **Firebase 
 
 O mecanismo atual identifica a pessoa apenas pelo CPF. Como CPF pode ser conhecido por terceiros, é necessário acrescentar um segundo fator de autenticação e regras de segurança do Firestore antes de tratar esse fluxo como proteção de dados ou de operações em produção.
 
+## Apuração e publicação
+
+Ao criar uma eleição, informe data e horário de início e término. A votação pelo aplicativo é aceita somente dentro desse intervalo, com verificação pelo servidor. Depois do término, o administrador consulta a apuração em `/eleicao/{id}/resultados` a partir da lista `/eleicao` e autoriza a publicação. A publicação usa o SDK comum do Firestore e grava um documento consolidado em `eleicoes/{id}/resultados/consolidado`, além de `publishedAllow: true` e `resultsPublishedAt` na eleição, sem alterar os contadores de votos. A publicação pelo aplicativo é permitida uma única vez. Usuários consultam os resultados publicados em `/resultados`. Se `publishedAllow: true` for colocado manualmente no documento de uma eleição encerrada, a consulta pública calcula o resultado diretamente dos votos, mesmo sem o documento consolidado. Para ocultar novamente uma eleição, use `publishedAllow: false`.
+
+A publicação e o registro de votos não precisam de `GOOGLE_APPLICATION_CREDENTIALS`. Para permitir leituras e gravações sem autenticação do Firebase neste protótipo, copie o conteúdo de [`firestore.rules`](firestore.rules) para **Firebase Console → Firestore Database → Regras** e clique em **Publicar**. O arquivo local por si só não altera as regras do banco remoto. O cadastro de novos administradores ainda usa o Firebase Admin SDK e exige as credenciais de servidor descritas acima.
+
+As regras temporárias permitem que qualquer pessoa na Internet leia, altere e exclua **qualquer documento**, inclusive votos, usuários administradores e a marca de publicação. O login por CPF limita apenas as telas do aplicativo; não limita o acesso direto ao Firestore. Use esta configuração somente no protótipo e substitua-a por Firebase Authentication e regras restritivas antes de expor dados reais.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
