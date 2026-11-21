@@ -7,6 +7,7 @@ import { ConsultaPublica, EleicaoDeputado, EleicaoPresidente } from '@/interface
 import { firebaseElection, VotePayload } from '@/lib/repository/firebaseElectionFacade'
 import { useParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { isVotingOpen } from '@/lib/election-timing'
 
 type ElectionData = EleicaoDeputado | EleicaoPresidente | ConsultaPublica
 
@@ -27,7 +28,7 @@ export default function VotacaoPage() {
         if (!tipoEleicao) return
 
         const eleicao = await firebaseElection.findById(id, tipoEleicao)
-        if (isMounted && eleicao && eleicao.status === 'open') {
+        if (isMounted && eleicao && isVotingOpen(eleicao.status, eleicao.startsAt, eleicao.endsAt)) {
           setElectionData({ ...eleicao, type: tipoEleicao } as ElectionData)
         }
       }
@@ -48,8 +49,14 @@ export default function VotacaoPage() {
 
   const handleVoteSubmit = async (payload: VotePayload) => {
     if (!electionData) return
-    await firebaseElection.registerVote(electionData.id, payload)
-    alert('Voto registrado com sucesso!')
+    try {
+      await firebaseElection.registerVote(electionData.id, payload)
+      alert('Voto registrado com sucesso!')
+    }
+    catch (error) {
+      console.error('Erro ao registrar voto:', error)
+      alert('Não foi possível registrar o voto. Verifique se a votação ainda está aberta.')
+    }
   }
 
   if (loading) return <p>Carregando votação...</p>

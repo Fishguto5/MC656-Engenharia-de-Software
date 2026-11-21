@@ -48,7 +48,7 @@ export function ordenarPorVotacao(candidatos: VotosCandidato[]): VotosCandidato[
 
 // Nome da agremiação (partido ou federação) pela qual o VotosCandidato concorre.
 export function agremiacaoDe(VotosCandidato: VotosCandidato): string {
-  return VotosCandidato.federacao ?? VotosCandidato.partido
+  return VotosCandidato.federacao?.trim() || VotosCandidato.partido.trim()
 }
 
 // Rejeita agremiações desconhecidas, duplicadas e quantidades inválidas.

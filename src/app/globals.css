@@ -252,6 +252,15 @@ select:focus {
   background: red;
 }
 
+.admin-login-link {
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: max(20px, env(safe-area-inset-left));
+  margin: 0;
+  padding: 0 16px;
+  position: fixed;
+  width: auto;
+}
+
 /* ==========================================================================
    Mensagens do Formulário
    ========================================================================== */

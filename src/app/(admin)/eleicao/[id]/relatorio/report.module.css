@@ -1,0 +1,11 @@
+.page { max-width: 960px; margin: 0 auto; padding: 40px 20px 72px; }
+.nav { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 32px; }
+.nav a { color: #222; font-weight: 700; text-decoration: underline; }
+.page h1 { font-size: 2rem; margin: 0 0 12px; }
+.page h2 { font-size: 1.4rem; margin: 28px 0 16px; }
+.details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; border: 1px solid #ccc; padding: 20px; }
+.details dt { color: #555; font-size: .875rem; }
+.details dd { margin: 4px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { padding: 12px; border-bottom: 1px solid #ccc; text-align: left; vertical-align: top; }
+@media (max-width: 600px) { .table { display: block; overflow-x: auto; } }
