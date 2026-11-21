@@ -86,7 +86,7 @@ export class FirebaseDeputyRepository {
     return draft
   }
 
-  async create(domain: EleicaoDeputado): Promise<void> {
+  async create(domain: EleicaoDeputado): Promise<string> {
     const dbData = deputyAdapter.toDB(domain)
 
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
@@ -116,6 +116,7 @@ export class FirebaseDeputyRepository {
           domain.candidatos,
         )
       }
+      return generatedId
     }
     catch (error) {
       console.error('Erro ao criar Eleição para deputado:', error)

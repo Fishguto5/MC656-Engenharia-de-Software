@@ -347,7 +347,7 @@ export function EleicaoProvider({
     }
     catch (error) {
       console.error('Erro ao salvar consulta pública:', error)
-      alert('Ocorreu um erro ao salvar os dados. Tente novamente.')
+      alert(error instanceof Error ? error.message : 'Ocorreu um erro ao salvar os dados. Tente novamente.')
     }
   }
 
@@ -413,7 +413,7 @@ export function EleicaoProvider({
     }
     catch (error) {
       console.error('Erro ao salvar eleição para presidente:', error)
-      alert('Ocorreu um erro ao salvar os dados. Tente novamente.')
+      alert(error instanceof Error ? error.message : 'Ocorreu um erro ao salvar os dados. Tente novamente.')
     }
   }
 
@@ -495,7 +495,7 @@ export function EleicaoProvider({
     }
     catch (error) {
       console.error('Erro ao salvar eleição para deputado:', error)
-      alert('Ocorreu um erro ao salvar os dados da eleição de deputado. Tente novamente.')
+      alert(error instanceof Error ? error.message : 'Ocorreu um erro ao salvar os dados da eleição de deputado. Tente novamente.')
     }
   }
 

@@ -4,12 +4,13 @@ import { publishElectionResult, ResultPublicationError } from '@/lib/election-re
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    if (!await getAuthorizedAdmin(request.cookies.get(ADMIN_COOKIE)?.value)) {
+    const actor = await getAuthorizedAdmin(request.cookies.get(ADMIN_COOKIE)?.value)
+    if (!actor) {
       return NextResponse.json({ error: 'Acesso administrativo necessário.' }, { status: 401 })
     }
     const { id } = await params
     if (!id) return NextResponse.json({ error: 'Eleição inválida.' }, { status: 400 })
-    const result = await publishElectionResult(id)
+    const result = await publishElectionResult(id, actor)
     return NextResponse.json({ result }, { status: 201 })
   }
   catch (error) {

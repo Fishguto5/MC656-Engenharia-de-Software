@@ -89,11 +89,11 @@ export class FirebasePresidentRepository {
     return draft
   }
 
-  async create(domain: EleicaoPresidente): Promise<void> {
+  async create(domain: EleicaoPresidente): Promise<string> {
     const dbData = presidentAdapter.toDB(domain)
 
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
-      return
+      throw new Error('A data final deve ser posterior à data inicial.')
     }
 
     const data: Omit<EleicaoPresidenteDocument, 'id'> = {
@@ -119,6 +119,7 @@ export class FirebasePresidentRepository {
           domain.candidatos,
         )
       }
+      return generatedId
     }
     catch (error) {
       console.error('Erro ao criar Eleição para presidente:', error)

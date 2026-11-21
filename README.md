@@ -48,6 +48,12 @@ Ao criar uma eleição, informe data e horário de início e término. A votaç�
 
 A publicação e o registro de votos não precisam de `GOOGLE_APPLICATION_CREDENTIALS`. Para permitir leituras e gravações sem autenticação do Firebase neste protótipo, copie o conteúdo de [`firestore.rules`](firestore.rules) para **Firebase Console → Firestore Database → Regras** e clique em **Publicar**. O arquivo local por si só não altera as regras do banco remoto. O cadastro de novos administradores ainda usa o Firebase Admin SDK e exige as credenciais de servidor descritas acima.
 
+## Histórico administrativo das eleições
+
+Na lista `/eleicao`, o link **Relatório e histórico** abre `/eleicao/{id}/relatorio`. O relatório mostra os dados básicos da eleição e as ações de criação, edição, encerramento e publicação, com responsável e horário de Brasília. Cada ação fica em `eleicoes/{id}/historicoAdministrativo/{evento}` com apenas `action`, `actor` e `occurredAt`; não são gravados dados de votos nesse histórico. O responsável por ações manuais é o CPF da sessão administrativa, obtido pelo servidor. O encerramento é registrado como ação do **Sistema**, com o horário configurado para o fim da eleição, na primeira consulta administrativa após esse horário. Eleições anteriores à implantação do histórico não têm eventos retroativos de criação ou edição.
+
+O histórico oferece rastreabilidade no aplicativo, mas as regras temporárias abaixo permitem alterar ou apagar seus registros diretamente no Firestore. Para uma auditoria resistente a adulterações, será necessário restringir as regras e usar autenticação e gravações confiáveis no servidor.
+
 As regras temporárias permitem que qualquer pessoa na Internet leia, altere e exclua **qualquer documento**, inclusive votos, usuários administradores e a marca de publicação. O login por CPF limita apenas as telas do aplicativo; não limita o acesso direto ao Firestore. Use esta configuração somente no protótipo e substitua-a por Firebase Authentication e regras restritivas antes de expor dados reais.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.

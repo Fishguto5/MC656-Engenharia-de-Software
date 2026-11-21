@@ -217,9 +217,11 @@ export async function getAdminElectionResult(id: string): Promise<AdminResultVie
   return { title, phase, published: false, result: calculateResult(id, inputs.data, inputs.candidates) }
 }
 
-export async function publishElectionResult(id: string): Promise<ElectionResult> {
+export async function publishElectionResult(id: string, actor: string): Promise<ElectionResult> {
   const electionRef = doc(firestore, 'eleicoes', id)
   const resultRef = doc(firestore, 'eleicoes', id, 'resultados', 'consolidado')
+  const historyRef = doc(collection(firestore, 'eleicoes', id, 'historicoAdministrativo'))
+  const closureRef = doc(firestore, 'eleicoes', id, 'historicoAdministrativo', 'closed-auto')
   const election = await getDoc(electionRef)
   if (!election.exists()) throw new ResultPublicationError('NOT_FOUND', 'Eleição não encontrada.')
   const data = election.data()
@@ -235,6 +237,7 @@ export async function publishElectionResult(id: string): Promise<ElectionResult>
   return runTransaction(firestore, async (transaction) => {
     const current = await transaction.get(electionRef)
     const existing = await transaction.get(resultRef)
+    const closure = await transaction.get(closureRef)
     if (!current.exists()) throw new ResultPublicationError('NOT_FOUND', 'Eleição não encontrada.')
     const currentData = current.data()
     if (!canPublishResults(currentData.status, currentData.startsAt, currentData.endsAt)) {
@@ -247,6 +250,11 @@ export async function publishElectionResult(id: string): Promise<ElectionResult>
     const publishedAt = new Date().toISOString()
     const published = { ...result, publishedAt }
     transaction.set(resultRef, published)
+    if (!closure.exists()) {
+      const endsAt = asElectionDate(currentData.endsAt)
+      if (endsAt) transaction.set(closureRef, { action: 'closed', actor: 'Sistema', occurredAt: Timestamp.fromDate(endsAt) })
+    }
+    transaction.set(historyRef, { action: 'published', actor, occurredAt: Timestamp.fromDate(new Date(publishedAt)) })
     transaction.update(electionRef, {
       status: 'closed',
       publishedAllow: true,

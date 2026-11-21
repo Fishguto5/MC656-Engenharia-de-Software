@@ -25,6 +25,7 @@ export default async function AdminResultsPage({ params }: { params: Promise<{ i
     <main className="signup-candidate-page">
       <div className="signup-candidate-header">
         <Link href="/eleicao">Voltar às eleições</Link>
+        <p><Link href={`/eleicao/${encodeURIComponent(id)}/relatorio`}>Relatório e histórico administrativo</Link></p>
         <h1>{view.title}</h1>
         {!view.result && <p>Os resultados ficam disponíveis após o horário de término da votação.</p>}
         {view.result && (

@@ -70,12 +70,12 @@ export class FirebasePublicConsultationRepository {
     return draft
   }
 
-  async create(domain: ConsultaPublica): Promise<void> {
+  async create(domain: ConsultaPublica): Promise<string> {
     const dbData = publicConsultationAdapter.toDB(domain)
 
     // Verificar data de inicio e fim
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
-      return
+      throw new Error('A data final deve ser posterior à data inicial.')
     }
 
     // Criar data
@@ -87,7 +87,8 @@ export class FirebasePublicConsultationRepository {
     }
 
     try {
-      await addDoc(collection(firestore, ELECTION_COLLECTION), data)
+      const created = await addDoc(collection(firestore, ELECTION_COLLECTION), data)
+      return created.id
     }
     catch (error) {
       console.error('Erro ao criar consulta pública:', error)

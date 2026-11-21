@@ -32,7 +32,7 @@ function electionSnapshot(endsAt: Date, extra: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(doc).mockImplementation((...args) => args.slice(1).join('/') as never)
+  vi.mocked(doc).mockImplementation((...args) => (args.length === 1 ? `${args[0]}/generated-event` : args.slice(1).join('/')) as never)
   vi.mocked(collection).mockImplementation((...args) => args.slice(1).join('/') as never)
   vi.mocked(getDoc).mockImplementation(async (reference) => {
     if ((reference as unknown) === 'eleicoes/eleicao-1') {
@@ -46,6 +46,7 @@ beforeEach(() => {
   get.mockImplementation(async (reference: unknown) => {
     if (reference === 'eleicoes/eleicao-1') return electionSnapshot(new Date('2020-01-02T00:00:00Z'))
     if (reference === 'eleicoes/eleicao-1/resultados/consolidado') return { exists: () => false }
+    if (reference === 'eleicoes/eleicao-1/historicoAdministrativo/closed-auto') return { exists: () => false }
     throw new Error('Referência inesperada')
   })
 })
@@ -54,14 +55,14 @@ describe('publicação de resultados', () => {
   it('não publica antes do encerramento', async () => {
     vi.mocked(getDoc).mockResolvedValue(electionSnapshot(new Date('2999-01-01T00:00:00Z')) as never)
 
-    await expect(publishElectionResult('eleicao-1')).rejects.toMatchObject({ code: 'NOT_CLOSED' } satisfies Partial<ResultPublicationError>)
+    await expect(publishElectionResult('eleicao-1', '64487570239')).rejects.toMatchObject({ code: 'NOT_CLOSED' } satisfies Partial<ResultPublicationError>)
     expect(runTransaction).not.toHaveBeenCalled()
     expect(set).not.toHaveBeenCalled()
     expect(update).not.toHaveBeenCalled()
   })
 
   it('publica um consolidado e a marca de visibilidade sem modificar os votos', async () => {
-    const result = await publishElectionResult('eleicao-1')
+    const result = await publishElectionResult('eleicao-1', '64487570239')
 
     expect(result).toMatchObject({
       votosValidos: 15,
@@ -70,6 +71,8 @@ describe('publicação de resultados', () => {
     })
     expect(result.publishedAt).toBeTruthy()
     expect(set).toHaveBeenCalledWith('eleicoes/eleicao-1/resultados/consolidado', result)
+    expect(set).toHaveBeenCalledWith('eleicoes/eleicao-1/historicoAdministrativo/closed-auto', expect.objectContaining({ action: 'closed', actor: 'Sistema' }))
+    expect(set).toHaveBeenCalledWith('eleicoes/eleicao-1/historicoAdministrativo/generated-event', expect.objectContaining({ action: 'published', actor: '64487570239' }))
     expect(update).toHaveBeenCalledOnce()
     expect(update.mock.calls[0][0]).toBe('eleicoes/eleicao-1')
     expect(update.mock.calls[0][1]).toMatchObject({ status: 'closed', publishedAllow: true })

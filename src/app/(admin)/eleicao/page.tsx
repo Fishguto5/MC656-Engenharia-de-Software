@@ -4,6 +4,7 @@ import { firestore } from '@/lib/firebase'
 import { ELECTION_COLLECTION } from '@/lib/constants/firebase'
 import { ElectionType } from '@/lib/constants/election'
 import { asElectionDate, getElectionPhase, type ElectionPhase } from '@/lib/election-timing'
+import { ensureElectionClosure } from '@/lib/election-audit'
 import styles from './page.module.css'
 
 type ElectionSummary = {
@@ -79,8 +80,9 @@ function ElectionSection({ title, elections, emptyMessage }: {
                     <Link className={styles.editLink} href={`/eleicao/${election.id}/editar`}>Editar rascunho</Link>
                   )}
                   {election.status === 'closed' && (
-                    <Link className={styles.editLink} href={`/eleicao/${election.id}/resultados`}>Consultar resultados</Link>
+                    <Link className={styles.editLink} href={`/eleicao/${election.id}/resultados`}>Consultar resultados  </Link>
                   )}
+                  <Link className={styles.editLink} href={`/eleicao/${election.id}/relatorio`}>Relatório e histórico</Link>
                 </li>
               ))}
             </ul>
@@ -111,6 +113,7 @@ export default async function ElectionsPage() {
         createdAt: asElectionDate(data.createdAt),
       }
     })
+    await Promise.all(snapshot.docs.map(document => ensureElectionClosure(document.id, document.data())))
   }
   catch (error) {
     console.error('Erro ao carregar eleições:', error)
