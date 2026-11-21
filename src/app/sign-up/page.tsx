@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
 
 function onlyDigits(value: string) {
@@ -112,6 +113,9 @@ export default function SignUpPage() {
           )}
         </form>
       </section>
+      <Link href="/admin/login" className="primary-btn admin-login-link">
+        Entrar como administrador
+      </Link>
     </main>
   )
 }
