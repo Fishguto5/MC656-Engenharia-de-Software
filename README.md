@@ -30,6 +30,14 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Acesso administrativo
+
+Configure `ADMIN_SESSION_SECRET` no ambiente do servidor com uma string aleatória de pelo menos 32 caracteres, além das variáveis `NEXT_PUBLIC_FIREBASE_*` já usadas pelo projeto. Cadastre administradores na coleção Firestore `users`, usando o CPF sem pontuação como ID do documento e `isAdmin: true` como campo booleano.
+
+Acesse `/admin/login` e informe o CPF cadastrado. O painel fica em `/admin`; as páginas de gerenciamento exigem uma sessão assinada e consultam novamente a permissão no Firestore. A sessão expira após oito horas. O botão **Sair** encerra a sessão.
+
+O mecanismo atual identifica a pessoa apenas pelo CPF. Como CPF pode ser conhecido por terceiros, é necessário acrescentar um segundo fator de autenticação e regras de segurança do Firestore antes de tratar esse fluxo como proteção de dados ou de operações em produção.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
