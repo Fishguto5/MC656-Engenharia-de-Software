@@ -10,6 +10,7 @@ import { validateDraft } from '@/schemas/electionDraftSchema'
 import { MINIMUM_DEPUTY_AGE, UF } from '../constants/election'
 import { ELECTION_COLLECTION } from '../constants/firebase'
 import { VotePayload } from './firebaseElectionFacade'
+import { numberIsUnique } from '../utils/votoCandidato'
 
 export const maxDeputyDoB = () => getDateYearsAgo(MINIMUM_DEPUTY_AGE)
 
@@ -128,6 +129,10 @@ export class FirebaseDeputyRepository {
       throw new Error('A data final deve ser posterior à data inicial.')
     }
 
+    if (!numberIsUnique(domain.candidatos)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
+    }
+
     const data: Omit<EleicaoDeputadoDocument, 'id'> = {
       ...omitId<EleicaoDeputadoDocument>(dbData),
       createdAt: serverTimestamp() as unknown as Timestamp,
@@ -162,6 +167,10 @@ export class FirebaseDeputyRepository {
 
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
       throw new Error('A data final deve ser posterior à data inicial.')
+    }
+
+    if (!numberIsUnique(domain.candidatos)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
     }
 
     const data: Omit<EleicaoDeputadoDocument, 'id'> = {
@@ -199,6 +208,9 @@ export class FirebaseDeputyRepository {
           votos: candidate.votos ?? 0,
         }))
       : undefined
+    if (sanitizedCandidates && !numberIsUnique(sanitizedCandidates)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
+    }
 
     const errorMsg = validateDraft('deputy', {
       startsAt: startsAtDate,
