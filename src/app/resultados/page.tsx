@@ -21,7 +21,10 @@ export default async function PublishedResultsPage() {
         <ul>
           {results.map(result => (
             <li key={result.id}>
-              <Link href={`/resultados/${result.id}`}>{result.title}</Link>
+              <Link href={`/resultados/${result.id}`}>
+                {result.title}
+                {result.type === 'president' && ` · ${result.turno === 2 ? '2º turno' : '1º turno'}`}
+              </Link>
               {' — '}
               {result.publishedAt
                 ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short' }).format(new Date(result.publishedAt))

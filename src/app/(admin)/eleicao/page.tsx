@@ -16,6 +16,8 @@ type ElectionSummary = {
   startsAt: Date | null
   endsAt: Date | null
   createdAt: Date | null
+  turno: number
+  originalElectionId: string | null
 }
 
 const typeLabels: Record<ElectionType, string> = {
@@ -64,7 +66,13 @@ function ElectionSection({ title, elections, emptyMessage }: {
                     <h3>{election.title}</h3>
                     <span className={styles.status}>{statusLabels[election.status]}</span>
                   </div>
-                  <p className={styles.type}>{typeLabels[election.type as ElectionType] ?? 'Tipo não informado'}</p>
+                  <p className={styles.type}>
+                    {typeLabels[election.type as ElectionType] ?? 'Tipo não informado'}
+                    {election.type === 'president' && ` · ${election.turno === 2 ? '2º turno' : '1º turno'}`}
+                  </p>
+                  {election.originalElectionId && (
+                    <Link href={`/eleicao/${encodeURIComponent(election.originalElectionId)}/resultados`}>Eleição original</Link>
+                  )}
                   {election.description && <p className={styles.description}>{election.description}</p>}
                   <dl className={styles.dates}>
                     <div>
@@ -111,6 +119,8 @@ export default async function ElectionsPage() {
         startsAt,
         endsAt,
         createdAt: asElectionDate(data.createdAt),
+        turno: data.turno === 2 ? 2 : 1,
+        originalElectionId: typeof data.originalElectionId === 'string' ? data.originalElectionId : null,
       }
     })
     await Promise.all(snapshot.docs.map(document => ensureElectionClosure(document.id, document.data())))

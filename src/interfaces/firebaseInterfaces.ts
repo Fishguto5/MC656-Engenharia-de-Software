@@ -67,6 +67,8 @@ export interface ResultadoDeputadoConsolidadoDocument {
 export interface EleicaoPresidenteDocument extends BaseElectionDocument {
   type: 'president'
   turno: number
+  originalElectionId?: string
+  secondRoundElectionId?: string
   votosBrancos: number
   votosNulos: number
 }

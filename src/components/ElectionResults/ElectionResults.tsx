@@ -16,7 +16,10 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
 export default function ElectionResults({ result }: { result: ElectionResult }) {
   return (
     <div className={styles.results}>
-      <p>{typeLabels[result.type]}</p>
+      <p>
+        {typeLabels[result.type]}
+        {result.type === 'president' && ` · ${result.turno === 2 ? '2º turno' : '1º turno'}`}
+      </p>
       <p>
         Votação encerrada em
         {' '}
@@ -103,6 +106,9 @@ export default function ElectionResults({ result }: { result: ElectionResult }) 
             ))}
           </ol>
           {result.segundoTurno && <p>É necessário segundo turno para definir a presidência.</p>}
+          {result.type === 'president' && result.turno === 2 && result.votosValidos > 0
+            && !result.candidatos.some(candidate => candidate.eleito)
+            && <p>O segundo turno terminou empatado; não há vencedor definido.</p>}
         </section>
       )}
 

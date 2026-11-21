@@ -146,6 +146,41 @@ describe('publicação de resultados', () => {
     })
   })
 
+  it('apura e publica o segundo turno como resultado final sem somar votos do primeiro', async () => {
+    const secondRound = electionSnapshot(new Date('2020-01-02T00:00:00Z'), {
+      title: 'Presidência — 2º turno', type: 'president', turno: 2, originalElectionId: 'original-1',
+      votosBrancos: 1, votosNulos: 0,
+    })
+    vi.mocked(getDoc).mockImplementation(async (reference) => {
+      if ((reference as unknown) === 'eleicoes/eleicao-1') return secondRound as never
+      if ((reference as unknown) === 'candidatos/ana') return {
+        exists: () => true, data: () => ({ nome: 'Ana', partido: 'A', dataNascimento: new Date('1980-01-01T00:00:00Z') }),
+      } as never
+      if ((reference as unknown) === 'candidatos/bia') return {
+        exists: () => true, data: () => ({ nome: 'Bia', partido: 'B', dataNascimento: new Date('1980-01-01T00:00:00Z') }),
+      } as never
+      throw new Error('Referência inesperada')
+    })
+    vi.mocked(getDocs).mockResolvedValue({ docs: [
+      { id: 'ana', data: () => ({ candidatoId: 'ana', numero: 10, votos: 3 }) },
+      { id: 'bia', data: () => ({ candidatoId: 'bia', numero: 20, votos: 2 }) },
+    ] } as never)
+    get.mockImplementation(async (reference: unknown) => {
+      if (reference === 'eleicoes/eleicao-1') return secondRound
+      return { exists: () => false }
+    })
+
+    const result = await publishElectionResult('eleicao-1', '64487570239')
+
+    expect(result).toMatchObject({
+      turno: 2, originalElectionId: 'original-1', segundoTurno: false,
+      totalVotos: 6, votosValidos: 5,
+      candidatos: [{ id: 'ana', votos: 3, eleito: true }, { id: 'bia', votos: 2, eleito: false }],
+    })
+    expect(set).toHaveBeenCalledWith('eleicoes/eleicao-1/resultados/consolidado', result)
+    expect(update).toHaveBeenCalledWith('eleicoes/eleicao-1', expect.objectContaining({ publishedAllow: true }))
+  })
+
   it('não entrega ao público um resultado sem autorização de publicação', async () => {
     expect(await getPublishedResult('eleicao-1')).toBeNull()
     expect(getDoc).toHaveBeenCalledTimes(1)

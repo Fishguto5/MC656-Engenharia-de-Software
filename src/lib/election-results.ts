@@ -28,6 +28,8 @@ export type ElectionResult = {
   totalVotos: number
   candidatos: CandidateResult[]
   segundoTurno: boolean
+  turno?: 1 | 2
+  originalElectionId?: string | null
   quocienteEleitoral: number | null
   votosLegenda: number
   agremiacoes: Array<{ nome: string, votosValidos: number, vagas: number }>
@@ -39,6 +41,9 @@ export type AdminResultView = {
   phase: ElectionPhase
   published: boolean
   result: ElectionResult | null
+  turno: 1 | 2
+  originalElectionId: string | null
+  secondRoundElectionId: string | null
 }
 
 export class ResultPublicationError extends Error {
@@ -121,8 +126,10 @@ function calculateResult(id: string, data: DocumentData, candidates: VotosCandid
 
   if (type === 'president' && votosValidos > 0) {
     const winner = ordered[0]
-    segundoTurno = winner.votos * 2 <= votosValidos
-    electedIds = segundoTurno ? [] : [winner.id]
+    const isSecondRound = data.turno === 2
+    segundoTurno = !isSecondRound && ordered.length >= 2 && winner.votos * 2 <= votosValidos
+    const tied = isSecondRound && ordered.length >= 2 && winner.votos === ordered[1].votos
+    electedIds = segundoTurno || tied ? [] : [winner.id]
   }
   else if (type === 'deputy') {
     const uf = data.uf as UF
@@ -192,6 +199,8 @@ function calculateResult(id: string, data: DocumentData, candidates: VotosCandid
       eleito: elected.has(candidate.id),
     })),
     segundoTurno,
+    turno: type === 'president' && data.turno === 2 ? 2 : 1,
+    originalElectionId: type === 'president' && typeof data.originalElectionId === 'string' ? data.originalElectionId : null,
     quocienteEleitoral,
     votosLegenda,
     agremiacoes,
@@ -205,16 +214,19 @@ export async function getAdminElectionResult(id: string): Promise<AdminResultVie
   const data = election.data() as DocumentData
   const phase = getElectionPhase(data.status, data.startsAt, data.endsAt)
   const title = typeof data.title === 'string' ? data.title : 'Eleição sem título'
+  const round = { turno: data.turno === 2 ? 2 as const : 1 as const,
+    originalElectionId: typeof data.originalElectionId === 'string' ? data.originalElectionId : null,
+    secondRoundElectionId: typeof data.secondRoundElectionId === 'string' ? data.secondRoundElectionId : null }
   if (!canPublishResults(data.status, data.startsAt, data.endsAt)) {
-    return { title, phase, published: false, result: null }
+    return { title, phase, published: false, result: null, ...round }
   }
 
   if (isPublished(data)) {
-    return { title, phase, published: true, result: await publishedResult(id, data) }
+    return { title, phase, published: true, result: await publishedResult(id, data), ...round }
   }
 
   const inputs = await loadPreviewInputs(id, data)
-  return { title, phase, published: false, result: calculateResult(id, inputs.data, inputs.candidates) }
+  return { title, phase, published: false, result: calculateResult(id, inputs.data, inputs.candidates), ...round }
 }
 
 export async function publishElectionResult(id: string, actor: string): Promise<ElectionResult> {
@@ -264,7 +276,7 @@ export async function publishElectionResult(id: string, actor: string): Promise<
   })
 }
 
-export async function listPublishedResults(): Promise<Array<{ id: string, title: string, type: ElectionType, publishedAt: string | null }>> {
+export async function listPublishedResults(): Promise<Array<{ id: string, title: string, type: ElectionType, turno: 1 | 2, publishedAt: string | null }>> {
   const snapshot = await getDocs(collection(firestore, 'eleicoes'))
   return snapshot.docs.flatMap((document) => {
     const data = document.data()
@@ -274,6 +286,7 @@ export async function listPublishedResults(): Promise<Array<{ id: string, title:
         id: document.id,
         title: typeof data.title === 'string' ? data.title : 'Eleição sem título',
         type: electionType(data.type),
+        turno: data.turno === 2 ? 2 as const : 1 as const,
         publishedAt: asElectionDate(data.resultsPublishedAt)?.toISOString() ?? null,
       }]
     }

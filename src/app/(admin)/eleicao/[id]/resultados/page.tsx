@@ -27,11 +27,20 @@ export default async function AdminResultsPage({ params }: { params: Promise<{ i
         <Link href="/eleicao">Voltar às eleições</Link>
         <p><Link href={`/eleicao/${encodeURIComponent(id)}/relatorio`}>Relatório e histórico administrativo</Link></p>
         <h1>{view.title}</h1>
+        {view.turno === 2 && view.originalElectionId && (
+          <p><Link href={`/eleicao/${encodeURIComponent(view.originalElectionId)}/resultados`}>Ver apuração do primeiro turno</Link></p>
+        )}
+        {view.secondRoundElectionId && (
+          <p><Link href={`/eleicao/${encodeURIComponent(view.secondRoundElectionId)}/resultados`}>Ver segundo turno</Link></p>
+        )}
         {!view.result && <p>Os resultados ficam disponíveis após o horário de término da votação.</p>}
         {view.result && (
           <>
             <p>{view.published ? 'Resultado publicado' : 'Prévia da apuração para autorização'}</p>
             <ElectionResults result={view.result} />
+            {view.turno === 1 && view.result.segundoTurno && !view.secondRoundElectionId && (
+              <p><Link href={`/eleicao/${encodeURIComponent(id)}/segundo-turno`}>Criar votação de segundo turno</Link></p>
+            )}
             {view.published
               ? <p><Link href={`/resultados/${encodeURIComponent(id)}`}>Ver resultado público</Link></p>
               : <PublishButton electionId={id} />}

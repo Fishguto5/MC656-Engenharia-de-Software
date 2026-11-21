@@ -66,7 +66,19 @@ export default async function ElectionReportPage({ params }: { params: Promise<{
           <dt>Resultados</dt>
           <dd>{report.published ? 'Publicados' : 'Não publicados'}</dd>
         </div>
+        {report.type === 'president' && (
+          <div>
+            <dt>Turno</dt>
+            <dd>{report.turno === 2 ? 'Segundo' : 'Primeiro'}</dd>
+          </div>
+        )}
       </dl>
+      {report.originalElectionId && (
+        <p><Link href={`/eleicao/${encodeURIComponent(report.originalElectionId)}/relatorio`}>Relatório do primeiro turno</Link></p>
+      )}
+      {report.secondRoundElectionId && (
+        <p><Link href={`/eleicao/${encodeURIComponent(report.secondRoundElectionId)}/relatorio`}>Relatório do segundo turno</Link></p>
+      )}
       <section aria-labelledby="history-title">
         <h2 id="history-title">Histórico administrativo</h2>
         {report.history.length === 0

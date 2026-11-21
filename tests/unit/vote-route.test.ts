@@ -91,4 +91,29 @@ describe('registro de voto com relógio do servidor', () => {
     expect(response.status).toBe(200)
     expect(update).toHaveBeenCalledWith('eleicoes/eleicao-1/candidatos/candidato-1', { votos: { increment: 1 } })
   })
+
+  it('contabiliza o voto do segundo turno somente na nova eleição', async () => {
+    get.mockImplementation(async (reference: unknown) => {
+      if (reference === 'eleicoes/segundo-1') return {
+        exists: () => true,
+        data: () => ({
+          type: 'president', turno: 2, originalElectionId: 'primeiro-1', status: 'scheduled',
+          startsAt: new Date('2019-01-01T00:00:00Z'), endsAt: new Date('2999-01-02T00:00:00Z'),
+        }),
+      }
+      if (reference === 'eleicoes/segundo-1/candidatos/ana') return {
+        exists: () => true, data: () => ({ numero: 10, votos: 0 }),
+      }
+      throw new Error('Referência inesperada')
+    })
+    vi.mocked(getDocs).mockResolvedValue({ docs: [{ ref: 'eleicoes/segundo-1/candidatos/ana' }] } as never)
+    const secondVote = new NextRequest('http://localhost/api/elections/segundo-1/vote', {
+      method: 'POST', body: JSON.stringify({ type: 'president', candidateNumber: 10 }),
+    })
+
+    const response = await POST(secondVote, { params: Promise.resolve({ id: 'segundo-1' }) })
+
+    expect(response.status).toBe(200)
+    expect(update).toHaveBeenCalledExactlyOnceWith('eleicoes/segundo-1/candidatos/ana', { votos: { increment: 1 } })
+  })
 })

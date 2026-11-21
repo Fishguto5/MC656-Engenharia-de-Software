@@ -54,6 +54,12 @@ Na lista `/eleicao`, o link **Relatório e histórico** abre `/eleicao/{id}/rela
 
 O histórico oferece rastreabilidade no aplicativo, mas as regras temporárias abaixo permitem alterar ou apagar seus registros diretamente no Firestore. Para uma auditoria resistente a adulterações, será necessário restringir as regras e usar autenticação e gravações confiáveis no servidor.
 
+## Segundo turno presidencial
+
+Após o encerramento da primeira votação presidencial, a apuração em `/eleicao/{id}/resultados` apresenta **Criar votação de segundo turno** quando nenhum candidato obteve mais da metade dos votos válidos. O administrador configura início, término e confirma os dois candidatos mais votados. O servidor valida novamente a apuração e cria a votação com `turno: 2` e `originalElectionId`; a eleição original recebe `secondRoundElectionId`. Só é permitido um segundo turno por eleição original. Se houver empate na segunda colocação, a criação fica bloqueada até que exista uma regra para definir os habilitados.
+
+Os documentos da segunda votação têm contadores próprios, todos iniciados em zero. Depois do encerramento, o administrador publica o resultado final pelo mesmo botão de publicação. A lista de resultados identifica cada turno; o resultado do segundo mostra apenas os votos registrados nele. A criação também aparece no histórico administrativo das duas eleições.
+
 As regras temporárias permitem que qualquer pessoa na Internet leia, altere e exclua **qualquer documento**, inclusive votos, usuários administradores e a marca de publicação. O login por CPF limita apenas as telas do aplicativo; não limita o acesso direto ao Firestore. Use esta configuração somente no protótipo e substitua-a por Firebase Authentication e regras restritivas antes de expor dados reais.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.

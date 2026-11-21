@@ -4,7 +4,7 @@ import { Timestamp, collection, doc, getDoc, getDocs, runTransaction, setDoc, ty
 import { firestore } from '@/lib/firebase'
 import { asElectionDate, canPublishResults, getElectionPhase, type ElectionPhase } from '@/lib/election-timing'
 
-export type ElectionAuditAction = 'created' | 'edited' | 'closed' | 'published'
+export type ElectionAuditAction = 'created' | 'edited' | 'closed' | 'published' | 'second_round_created'
 
 export type ElectionAuditEntry = {
   id: string
@@ -18,6 +18,7 @@ export const auditActionLabels: Record<ElectionAuditAction, string> = {
   edited: 'Edição da eleição',
   closed: 'Encerramento da votação',
   published: 'Publicação dos resultados',
+  second_round_created: 'Criação do segundo turno',
 }
 
 const auditCollection = (id: string) => collection(firestore, 'eleicoes', id, 'historicoAdministrativo')
@@ -48,7 +49,7 @@ export async function ensureElectionClosure(id: string, data: DocumentData): Pro
 
 export async function getElectionAudit(id: string): Promise<ElectionAuditEntry[]> {
   const snapshot = await getDocs(auditCollection(id))
-  const actions = new Set<ElectionAuditAction>(['created', 'edited', 'closed', 'published'])
+  const actions = new Set<ElectionAuditAction>(['created', 'edited', 'closed', 'published', 'second_round_created'])
   return snapshot.docs.flatMap((entry) => {
     const data = entry.data()
     const occurredAt = asElectionDate(data.occurredAt)
@@ -64,6 +65,9 @@ export async function getElectionReport(id: string): Promise<{
   startsAt: Date | null
   endsAt: Date | null
   published: boolean
+  turno: 1 | 2
+  originalElectionId: string | null
+  secondRoundElectionId: string | null
   history: ElectionAuditEntry[]
 } | null> {
   const election = await getDoc(doc(firestore, 'eleicoes', id))
@@ -77,6 +81,9 @@ export async function getElectionReport(id: string): Promise<{
     startsAt: asElectionDate(data.startsAt),
     endsAt: asElectionDate(data.endsAt),
     published: data.publishedAllow === true,
+    turno: data.turno === 2 ? 2 : 1,
+    originalElectionId: typeof data.originalElectionId === 'string' ? data.originalElectionId : null,
+    secondRoundElectionId: typeof data.secondRoundElectionId === 'string' ? data.secondRoundElectionId : null,
     history: await getElectionAudit(id),
   }
 }
