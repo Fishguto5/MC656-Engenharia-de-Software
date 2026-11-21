@@ -1,7 +1,8 @@
 'use client'
 
 import type { ElectionStatus } from '@/interfaces/firebaseInterfaces'
-import { type ElectionType, VALID_ELECTION_TYPE } from '@/lib/constants/election'
+import { type ElectionType, type UF, VALID_ELECTION_TYPE } from '@/lib/constants/election'
+import { isElectionAvailableForUf, isUf } from '@/lib/electionEligibility'
 import { ELECTION_COLLECTION } from '@/lib/constants/firebase'
 import { firestore } from '@/lib/firebase'
 import { readVoterSession, type VoterSession } from '@/lib/voterSession'
@@ -15,6 +16,8 @@ type ListedElection = {
   title: string
   description: string
   type: ElectionType
+  uf?: UF
+  local?: 'Brasil' | UF
   status: Exclude<ElectionStatus, 'draft'>
   startsAt: Date | null
   endsAt: Date | null
@@ -53,11 +56,16 @@ function toListedElection(id: string, data: DocumentData): ListedElection | null
     || !['open', 'scheduled', 'closed', 'cancelled'].includes(data.status)
   ) return null
 
+  if (data.type === 'deputy' && !isUf(data.uf)) return null
+  if (data.type === 'public-consultation' && data.local !== 'Brasil' && !isUf(data.local)) return null
+
   return {
     id,
     title: data.title,
     description: typeof data.description === 'string' ? data.description : '',
     type: data.type as ElectionType,
+    uf: isUf(data.uf) ? data.uf : undefined,
+    local: data.local === 'Brasil' || isUf(data.local) ? data.local : undefined,
     status: data.status as ListedElection['status'],
     startsAt: readDate(data.startsAt),
     endsAt: readDate(data.endsAt),
@@ -85,7 +93,8 @@ export default function ElectionsClientView() {
         if (!active) return
         setElections(electionsSnapshot.docs
           .map(snapshot => toListedElection(snapshot.id, snapshot.data()))
-          .filter((election): election is ListedElection => election !== null))
+          .filter((election): election is ListedElection => election !== null)
+          .filter(election => voterSession !== null && isElectionAvailableForUf(election, voterSession.uf)))
         setVoter(voterSession)
       }
       catch (cause) {
@@ -124,14 +133,14 @@ export default function ElectionsClientView() {
 
         {!loading && !error && !voter && (
           <div className={styles.notice}>
-            <p>Informe seu CPF e nome para acessar as votações abertas.</p>
+            <p>Informe seu CPF, nome e UF do domicílio eleitoral para acessar as votações.</p>
             <Link href="/sign-up">Ir para identificação</Link>
           </div>
         )}
 
         {loading && <p className={styles.stateMessage} role="status">Carregando eleições...</p>}
         {error && <p className={styles.stateMessage} role="alert">Não foi possível carregar as eleições. Tente novamente mais tarde.</p>}
-        {!loading && !error && elections.length === 0 && <p className={styles.stateMessage}>Nenhuma eleição disponível no momento.</p>}
+        {!loading && !error && voter && elections.length === 0 && <p className={styles.stateMessage}>Nenhuma eleição disponível no momento.</p>}
 
         {!loading && !error && sortedElections.length > 0 && (
           <section aria-label="Lista de eleições" className={styles.list}>

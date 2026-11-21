@@ -1,15 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import { LISTA_UFS, type UF } from '@/lib/constants/election'
 import { saveVoterSession } from '@/lib/voterSession'
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { formatCpf, isValidCpf } from '@/lib/utils/cpf'
+import { formatCpf, isValidCpf, onlyDigits } from '@/lib/utils/cpf'
 
 export default function SignUpPage() {
   const router = useRouter()
   const [cpf, setCpf] = useState('')
   const [name, setName] = useState('')
+  const [uf, setUf] = useState<UF | ''>('')
   const [message, setMessage] = useState('')
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -26,9 +28,14 @@ export default function SignUpPage() {
       return
     }
 
+    if (!uf) {
+      setMessage('Selecione a UF do domicílio eleitoral.')
+      return
+    }
+
     setMessage('')
     try {
-      saveVoterSession({ cpf: onlyDigits(cpf), name: trimmedName })
+      saveVoterSession({ cpf: onlyDigits(cpf), name: trimmedName, uf })
       router.push('/eleicoes')
     }
     catch {
@@ -68,6 +75,21 @@ export default function SignUpPage() {
               onChange={event => setName(event.target.value)}
               aria-describedby={message ? 'form-message' : undefined}
             />
+          </div>
+
+          <div className="form-field signup-uf-field">
+            <label htmlFor="uf">UF do domicílio eleitoral:</label>
+            <select
+              id="uf"
+              name="uf"
+              value={uf}
+              required
+              onChange={event => setUf(event.target.value as UF | '')}
+              aria-describedby={message ? 'form-message' : undefined}
+            >
+              <option value="">Selecione a UF</option>
+              {LISTA_UFS.map(value => <option key={value} value={value}>{value}</option>)}
+            </select>
           </div>
 
           <button type="submit" className="primary-btn">Acessar</button>

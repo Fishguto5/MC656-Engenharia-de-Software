@@ -4,7 +4,10 @@ import { ConsultaPublicaVotarForm } from '@/components/VotarForm/ConsultaPublica
 import { DeputadoVotarForm } from '@/components/VotarForm/DeputadoVotar'
 import { PresidenteVotarForm } from '@/components/VotarForm/PresidenteVotar'
 import { ConsultaPublica, EleicaoDeputado, EleicaoPresidente } from '@/interfaces/eleicaoInterfaces'
+import { isElectionAvailableForUf } from '@/lib/electionEligibility'
 import { firebaseElection, VotePayload } from '@/lib/repository/firebaseElectionFacade'
+import { readVoterSession, type VoterSession } from '@/lib/voterSession'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { isVotingOpen } from '@/lib/election-timing'
@@ -15,13 +18,26 @@ export default function VotacaoPage() {
   const params = useParams()
   const id = params.id as string
   const [electionData, setElectionData] = useState<ElectionData | null>(null)
+  const [voter, setVoter] = useState<VoterSession | null>(null)
+  const [message, setMessage] = useState('Votação não encontrada.')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let isMounted = true
 
     async function getEleicao() {
-      if (!id) return
+      const voterSession = readVoterSession()
+      if (!voterSession) {
+        if (isMounted) {
+          setMessage('Informe seu CPF, nome e UF do domicílio eleitoral para acessar esta votação.')
+          setLoading(false)
+        }
+        return
+      }
+      if (!id) {
+        if (isMounted) setLoading(false)
+        return
+      }
 
       try {
         const tipoEleicao = await firebaseElection.getType(id)
@@ -34,6 +50,7 @@ export default function VotacaoPage() {
       }
       catch (error) {
         console.error(error)
+        if (isMounted) setMessage('Não foi possível carregar esta votação. Tente novamente.')
       }
       finally {
         if (isMounted) setLoading(false)
@@ -60,10 +77,11 @@ export default function VotacaoPage() {
   }
 
   if (loading) return <p>Carregando votação...</p>
-  if (!electionData) return <p>Votação não encontrada.</p>
+  if (!electionData) return <main className="signup-candidate-page"><p role="alert">{message}</p><Link href={voter ? '/eleicoes' : '/sign-up'}>{voter ? 'Voltar para eleições' : 'Ir para identificação'}</Link></main>
 
   return (
     <main className="signup-candidate-page">
+      {message !== 'Votação não encontrada.' && <p role="alert">{message}</p>}
       {electionData.type === 'public-consultation' && (
         <ConsultaPublicaVotarForm election={electionData} onSubmit={handleVoteSubmit} />
       )}
