@@ -499,9 +499,9 @@ export function EleicaoProvider({
       updatedAt: new Date(),
       type: 'deputy',
       uf: formData.state as UF,
-      agremiacoes, // Lista de partidos/federações extraída automaticamente
+      agremiacoes: [], // Lista de partidos/federações extraída no repositório
       candidatos: sanitizedCandidates,
-      votosLegenda: votosLegendaInicial, // Mapa de votos de legenda zerado
+      votosLegenda: {}, // Mapa de votos de legenda extraída no repositório
       votosBrancos: 0,
       votosNulos: 0,
     }
