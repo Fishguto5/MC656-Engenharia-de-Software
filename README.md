@@ -36,6 +36,10 @@ Configure `ADMIN_SESSION_SECRET` no ambiente do servidor com uma string aleatór
 
 Acesse `/admin/login` e informe o CPF cadastrado. O painel fica em `/admin`; as páginas de gerenciamento exigem uma sessão assinada e consultam novamente a permissão no Firestore. A sessão expira após oito horas. O botão **Sair** encerra a sessão.
 
+Um administrador autenticado pode acessar `/admin/cadastrar` para registrar outro CPF como administrador. O servidor grava `isAdmin: true` em `users/{CPF}`; se o documento já existir, os demais campos são preservados.
+
+Para habilitar essa gravação localmente, gere uma chave privada em **Firebase Console → Configurações do projeto → Contas de serviço**, salve o JSON fora do repositório e adicione ao `.env` uma linha `GOOGLE_APPLICATION_CREDENTIALS=/caminho/absoluto/para/a-chave.json`. Reinicie o servidor de desenvolvimento após alterar o `.env`. No ambiente de implantação, configure uma conta de serviço com acesso ao mesmo projeto Firestore. As regras do Firestore devem impedir que clientes gravem diretamente na coleção `users`.
+
 O mecanismo atual identifica a pessoa apenas pelo CPF. Como CPF pode ser conhecido por terceiros, é necessário acrescentar um segundo fator de autenticação e regras de segurança do Firestore antes de tratar esse fluxo como proteção de dados ou de operações em produção.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
