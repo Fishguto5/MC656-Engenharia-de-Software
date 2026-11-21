@@ -443,21 +443,6 @@ export function EleicaoProvider({
       numero: candidate.numero,
     }))
 
-    // Extrai federações ou partidos como agremiações únicas
-    const agremiacoesSet = new Set<string>()
-    const votosLegendaInicial: Record<string, number> = {}
-
-    sanitizedCandidates.forEach((candidate) => {
-      // Se tiver federação, a lei considera a federação como uma única agremiação
-      const agremiacao = candidate.federacao?.trim() || candidate.partido.trim()
-      if (agremiacao) {
-        agremiacoesSet.add(agremiacao)
-        votosLegendaInicial[agremiacao] = 0 // Inicializa a contagem de votos de legenda da agremiação zerada
-      }
-    })
-
-    const agremiacoes = Array.from(agremiacoesSet)
-
     // 4. Montar o payload final para o domínio
     const submitData: EleicaoDeputado = {
       id: '', // Gerado automaticamente pelo repositório
@@ -470,9 +455,9 @@ export function EleicaoProvider({
       updatedAt: new Date(),
       type: 'deputy',
       uf: formData.state as UF,
-      agremiacoes, // Lista de partidos/federações extraída automaticamente
+      agremiacoes: [], // Lista de partidos/federações extraída no repositório
       candidatos: sanitizedCandidates,
-      votosLegenda: votosLegendaInicial, // Mapa de votos de legenda zerado
+      votosLegenda: {}, // Mapa de votos de legenda extraída no repositório
       votosBrancos: 0,
       votosNulos: 0,
     }
