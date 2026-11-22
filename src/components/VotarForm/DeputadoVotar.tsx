@@ -2,8 +2,9 @@
 
 import { EleicaoDeputado } from '@/interfaces/eleicaoInterfaces'
 import { ChangeEvent, useState } from 'react'
-import styles from './votarForm.module.css'
+import { CandidatosDialog } from '../CandidatosDialog/CandidatosDialog'
 import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog'
+import styles from './votarForm.module.css'
 
 interface Props {
   election: EleicaoDeputado
@@ -13,6 +14,7 @@ interface Props {
 export function DeputadoVotarForm({ election, onSubmit }: Props) {
   const [number, setNumber] = useState<number>(0)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isCandidatesOpen, setIsCandidatesOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const candidato = election.candidatos.find(cand => cand.numero === number)
@@ -99,7 +101,20 @@ export function DeputadoVotarForm({ election, onSubmit }: Props) {
         </div>
 
         <fieldset className={`form-field ${styles.formField}`}>
-          <label htmlFor="deputy">Número do Candidato</label>
+          <div className={styles.labelRow}>
+            <label htmlFor="deputy">Número do Candidato</label>
+            <button
+              type="button"
+              onClick={() => setIsCandidatesOpen(true)}
+              className={styles.helpBtn}
+              disabled={isSubmitting}
+              title="Ver lista de candidatos"
+              aria-label="Ver lista de candidatos"
+            >
+              ?
+            </button>
+          </div>
+
           <input
             type="number"
             name="deputy"
@@ -143,6 +158,15 @@ export function DeputadoVotarForm({ election, onSubmit }: Props) {
           </button>
         </div>
       </form>
+
+      <CandidatosDialog
+        open={isCandidatesOpen}
+        title={`Candidatos — ${election.title}`}
+        candidatos={election.candidatos}
+        showFederacao
+        onSelect={numero => setNumber(numero)}
+        onClose={() => setIsCandidatesOpen(false)}
+      />
 
       <ConfirmDialog
         open={isConfirmOpen}

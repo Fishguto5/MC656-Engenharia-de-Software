@@ -2,8 +2,9 @@
 
 import { EleicaoPresidente } from '@/interfaces/eleicaoInterfaces'
 import { ChangeEvent, useState } from 'react'
-import styles from './votarForm.module.css'
 import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog'
+import styles from './votarForm.module.css'
+import { CandidatosDialog } from '../CandidatosDialog/CandidatosDialog'
 
 interface Props {
   election: EleicaoPresidente
@@ -13,6 +14,7 @@ interface Props {
 export function PresidenteVotarForm({ election, onSubmit }: Props) {
   const [number, setNumber] = useState<number>(0)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isCandidatesOpen, setIsCandidatesOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const candidato = election.candidatos.find(cand => cand.numero === number)
@@ -94,7 +96,20 @@ export function PresidenteVotarForm({ election, onSubmit }: Props) {
         </div>
 
         <fieldset className={`form-field ${styles.formField}`}>
-          <label htmlFor="president">Número do Candidato</label>
+          <div className={styles.labelRow}>
+            <label htmlFor="president">Número do Candidato</label>
+            <button
+              type="button"
+              onClick={() => setIsCandidatesOpen(true)}
+              className={styles.helpBtn}
+              disabled={isSubmitting}
+              title="Ver lista de candidatos"
+              aria-label="Ver lista de candidatos"
+            >
+              ?
+            </button>
+          </div>
+
           <input
             type="number"
             name="president"
@@ -138,6 +153,14 @@ export function PresidenteVotarForm({ election, onSubmit }: Props) {
           </button>
         </div>
       </form>
+
+      <CandidatosDialog
+        open={isCandidatesOpen}
+        title={`Candidatos — ${election.title}`}
+        candidatos={election.candidatos}
+        onSelect={numero => setNumber(numero)}
+        onClose={() => setIsCandidatesOpen(false)}
+      />
 
       <ConfirmDialog
         open={isConfirmOpen}
