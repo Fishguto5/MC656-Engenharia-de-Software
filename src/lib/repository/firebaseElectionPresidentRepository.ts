@@ -11,6 +11,7 @@ import { MINIMUM_PRESIDENT_AGE } from '../constants/election'
 import { ELECTION_COLLECTION } from '../constants/firebase'
 import { VotePayload } from './firebaseElectionFacade'
 import { isVotingOpen } from '@/lib/election-timing'
+import { numberIsUnique } from '../utils/votoCandidato'
 
 export const maxPresidentDoB = () => {
   return getDateYearsAgo(MINIMUM_PRESIDENT_AGE)
@@ -96,6 +97,10 @@ export class FirebasePresidentRepository {
       throw new Error('A data final deve ser posterior à data inicial.')
     }
 
+    if (!numberIsUnique(domain.candidatos)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
+    }
+
     const data: Omit<EleicaoPresidenteDocument, 'id'> = {
       ...omitId<EleicaoPresidenteDocument>(dbData),
       publishedAllow: false,
@@ -134,6 +139,10 @@ export class FirebasePresidentRepository {
       return
     }
 
+    if (!numberIsUnique(domain.candidatos)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
+    }
+
     const data: Omit<EleicaoPresidenteDocument, 'id'> = {
       ...omitId<EleicaoPresidenteDocument>(dbData),
       updatedAt: serverTimestamp() as unknown as Timestamp,
@@ -169,6 +178,9 @@ export class FirebasePresidentRepository {
           votos: candidate.votos ?? 0,
         }))
       : undefined
+    if (sanitizedCandidates && !numberIsUnique(sanitizedCandidates)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
+    }
 
     const errorMsg = validateDraft('president', {
       startsAt: startsAtDate,

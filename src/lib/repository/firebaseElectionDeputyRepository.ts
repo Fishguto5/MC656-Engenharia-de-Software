@@ -2,7 +2,7 @@ import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc,
 import { firestore } from '../firebase'
 import { getDateYearsAgo, isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { omitId } from '../utils/omitId'
-import { EleicaoDeputado } from '@/interfaces/eleicaoInterfaces'
+import { EleicaoDeputado, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { ElectionStatus, EleicaoDeputadoDocument } from '@/interfaces/firebaseInterfaces'
 import { DeputyRawDocument, deputyAdapter } from '../adapter/firebaseDeputyAdapter'
 import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
@@ -11,12 +11,39 @@ import { MINIMUM_DEPUTY_AGE, UF } from '../constants/election'
 import { ELECTION_COLLECTION } from '../constants/firebase'
 import { VotePayload } from './firebaseElectionFacade'
 import { isVotingOpen } from '@/lib/election-timing'
+import { numberIsUnique } from '../utils/votoCandidato'
 
 export const maxDeputyDoB = () => getDateYearsAgo(MINIMUM_DEPUTY_AGE)
 
 type DeputyPayload = VotePayload & { type: 'deputy' }
+type AgremiacoesResult = {
+  agremiacoes: string[]
+  votosLegenda: Record<string, number>
+}
 
 export class FirebaseDeputyRepository {
+  private buildAgremiacoes(candidates: readonly VotosCandidato[]): AgremiacoesResult {
+    const votosLegenda: Record<string, number> = {}
+
+    for (const candidate of candidates) {
+      const agremiacao = candidate.federacao?.trim() || candidate.partido.trim()
+
+      if (agremiacao) {
+        if (Object.hasOwn(votosLegenda, agremiacao)) {
+          votosLegenda[agremiacao] += candidate.votos
+        }
+        else {
+          votosLegenda[agremiacao] = candidate.votos
+        }
+      }
+    }
+
+    return {
+      agremiacoes: Object.keys(votosLegenda),
+      votosLegenda,
+    }
+  }
+
   async findById(id: string): Promise<EleicaoDeputado | null> {
     const deputyRef = doc(firestore, ELECTION_COLLECTION, id)
     const snapshot = await getDoc(deputyRef)
@@ -35,6 +62,11 @@ export class FirebaseDeputyRepository {
 
       // Popula a subcoleção de candidatos da eleição
       eleicao.candidatos = await firebaseVotesCandidate.findByElectionId(id, ELECTION_COLLECTION)
+
+      // Cria as agremiações e votos por legenda
+      const { agremiacoes, votosLegenda } = this.buildAgremiacoes(eleicao.candidatos)
+      eleicao.agremiacoes = agremiacoes
+      eleicao.votosLegenda = votosLegenda
 
       return eleicao
     }
@@ -66,8 +98,6 @@ export class FirebaseDeputyRepository {
       ...(hasValue(data.status) && { status: data.status as ElectionStatus }),
       ...(hasValue(data.type) && { type: data.type }),
       ...(hasValue(data.uf) && { uf: data.uf as UF }),
-      ...(hasValue(data.agremiacoes) && { agremiacoes: data.agremiacoes }),
-      ...(hasValue(data.votosLegenda) && { votosLegenda: data.votosLegenda }),
       ...(hasValue(data.votosBrancos) && { votosBrancos: data.votosBrancos }),
       ...(hasValue(data.votosNulos) && { votosNulos: data.votosNulos }),
       ...(hasValue(data.startsAt) && { startsAt: RawDocumentTimeToDate(data.startsAt) }),
@@ -75,12 +105,19 @@ export class FirebaseDeputyRepository {
       ...(hasValue(data.createdAt) && { createdAt: RawDocumentTimeToDate(data.createdAt) }),
       ...(hasValue(data.updatedAt) && { updatedAt: RawDocumentTimeToDate(data.updatedAt) }),
       candidatos: [],
+      agremiacoes: [],
+      votosLegenda: {},
     }
 
     // Busca candidatos salvos na subcoleção de rascunho (se houver)
     const candidatos = await firebaseVotesCandidate.findByElectionId(id, ELECTION_COLLECTION)
     if (candidatos && candidatos.length > 0) {
       draft.candidatos = candidatos
+
+      // Cria as agremiações e votos por legenda
+      const { agremiacoes, votosLegenda } = this.buildAgremiacoes(draft.candidatos)
+      draft.agremiacoes = agremiacoes
+      draft.votosLegenda = votosLegenda
     }
 
     return draft
@@ -91,6 +128,10 @@ export class FirebaseDeputyRepository {
 
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
       throw new Error('A data final deve ser posterior à data inicial.')
+    }
+
+    if (!numberIsUnique(domain.candidatos)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
     }
 
     const data: Omit<EleicaoDeputadoDocument, 'id'> = {
@@ -131,6 +172,10 @@ export class FirebaseDeputyRepository {
       throw new Error('A data final deve ser posterior à data inicial.')
     }
 
+    if (!numberIsUnique(domain.candidatos)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
+    }
+
     const data: Omit<EleicaoDeputadoDocument, 'id'> = {
       ...omitId<EleicaoDeputadoDocument>(dbData),
       updatedAt: serverTimestamp() as unknown as Timestamp,
@@ -166,6 +211,9 @@ export class FirebaseDeputyRepository {
           votos: candidate.votos ?? 0,
         }))
       : undefined
+    if (sanitizedCandidates && !numberIsUnique(sanitizedCandidates)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
+    }
 
     const errorMsg = validateDraft('deputy', {
       startsAt: startsAtDate,
@@ -183,19 +231,6 @@ export class FirebaseDeputyRepository {
 
     const currentId = docRef.id
 
-    const agremiacoesSet = new Set<string>()
-    const votosLegendaInicial: Record<string, number> = {}
-
-    if (sanitizedCandidates && sanitizedCandidates.length > 0) {
-      sanitizedCandidates.forEach((candidate) => {
-        const agremiacao = candidate.federacao?.trim() || candidate.partido.trim()
-        if (agremiacao) {
-          agremiacoesSet.add(agremiacao)
-          votosLegendaInicial[agremiacao] = 0
-        }
-      })
-    }
-
     const draftData: Record<string, unknown> = {
       title: domain.title ?? null,
       description: domain.description ?? null,
@@ -205,8 +240,6 @@ export class FirebaseDeputyRepository {
       type: 'deputy',
       publishedAllow: false,
       uf: domain.uf ?? null,
-      agremiacoes: Array.from(agremiacoesSet),
-      votosLegenda: domain.votosLegenda ?? votosLegendaInicial,
       votosBrancos: domain.votosBrancos ?? 0,
       votosNulos: domain.votosNulos ?? 0,
       updatedAt: serverTimestamp(),

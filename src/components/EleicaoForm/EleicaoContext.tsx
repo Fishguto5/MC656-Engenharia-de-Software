@@ -5,6 +5,7 @@ import { DateToInputDateTime, InputDateTimeToDate, RawDocumentTimeToDate } from 
 import { useRouter } from 'next/navigation'
 import { firebaseElection } from '@/lib/repository/firebaseElectionFacade'
 import { ElectionType, UF } from '@/lib/constants/election'
+import { numberIsUnique } from '@/lib/utils/votoCandidato'
 
 export interface FormElectionData {
   title: string
@@ -171,6 +172,12 @@ export function EleicaoProvider({
       numero: candidate.numero,
     }))
 
+    // verificar se todos os números de candidatos são únicos
+    if (sanitizedCandidates && !numberIsUnique(sanitizedCandidates)) {
+      alert('Número dos Candidatos devem ser únicos')
+      return
+    }
+
     // 3. Montar o objeto parcial do domínio
     const draftData: Partial<EleicaoPresidente> = {
       title: formData.title || undefined,
@@ -209,6 +216,12 @@ export function EleicaoProvider({
       votos: candidate.votos ?? 0,
       numero: candidate.numero,
     }))
+
+    // verificar se todos os números de candidatos são únicos
+    if (sanitizedCandidates && !numberIsUnique(sanitizedCandidates)) {
+      alert('Número dos Candidatos devem ser únicos')
+      return
+    }
 
     // 3. Montar o objeto parcial do domínio
     const draftData: Partial<EleicaoDeputado> = {
@@ -288,22 +301,17 @@ export function EleicaoProvider({
   }
 
   // --- HANDLERS DO SUBMIT ----
-  async function handleSubmitPublicConsultation() {
+  async function handleSubmitPublicConsultation(): Promise<boolean> {
     // Validar datas
     const validDateStart = InputDateTimeToDate(formData.startsAt)
     if (!validDateStart) {
-      alert('Por favor, insira uma data e horário de início válidos.')
-      return
+      alert('Por favor, insira uma data de início (formato YYYY-MM-DD).')
+      return false
     }
     const validDateEnd = InputDateTimeToDate(formData.endsAt)
     if (!validDateEnd) {
-      alert('Por favor, insira uma data e horário de término válidos.')
-      return
-    }
-
-    if (validDateEnd <= validDateStart) {
-      alert('O término deve ser posterior ao início.')
-      return
+      alert('Por favor, insira uma data de finalização (formato YYYY-MM-DD).')
+      return false
     }
 
     const today = new Date()
@@ -343,30 +351,31 @@ export function EleicaoProvider({
       }
 
       router.refresh()
-      alert('Consulta pública salva com sucesso!')
+      return true
     }
     catch (error) {
       console.error('Erro ao salvar consulta pública:', error)
-      alert(error instanceof Error ? error.message : 'Ocorreu um erro ao salvar os dados. Tente novamente.')
+      alert('Ocorreu um erro ao salvar os dados. Tente novamente.')
+      return false
     }
   }
 
-  async function handleSubmitPresident() {
+  async function handleSubmitPresident(): Promise<boolean> {
     // 1. Validação de datas
     const validDateStart = InputDateTimeToDate(formData.startsAt)
     if (!validDateStart) {
-      alert('Por favor, insira uma data e horário de início válidos.')
-      return
+      alert('Por favor, insira uma data de início válida (formato YYYY-MM-DD).')
+      return false
     }
     const validDateEnd = InputDateTimeToDate(formData.endsAt)
     if (!validDateEnd) {
-      alert('Por favor, insira uma data e horário de término válidos.')
-      return
+      alert('Por favor, insira uma data de finalização válida (formato YYYY-MM-DD).')
+      return false
     }
 
-    if (validDateEnd <= validDateStart) {
-      alert('O término deve ser posterior ao início.')
-      return
+    if (validDateEnd < validDateStart) {
+      alert('A data de término deve ser posterior à data de início.')
+      return false
     }
 
     // 2. Determinar status
@@ -380,6 +389,12 @@ export function EleicaoProvider({
       votos: candidate.votos ?? 0,
       numero: candidate.numero,
     }))
+
+    // verificar se todos os números de candidatos são únicos
+    if (sanitizedCandidates && !numberIsUnique(sanitizedCandidates)) {
+      alert('Número dos Candidatos devem ser únicos')
+      return false
+    }
 
     // Enviar para o DB
     const submitData = {
@@ -409,30 +424,31 @@ export function EleicaoProvider({
         cleanForms()
       }
       router.refresh()
-      alert('Eleição para presidente salva com sucesso!')
+      return true
     }
     catch (error) {
       console.error('Erro ao salvar eleição para presidente:', error)
-      alert(error instanceof Error ? error.message : 'Ocorreu um erro ao salvar os dados. Tente novamente.')
+      alert('Ocorreu um erro ao salvar os dados. Tente novamente.')
+      return false
     }
   }
 
-  async function handleSubmitDeputy() {
+  async function handleSubmitDeputy(): Promise<boolean> {
     // 1. Validação de datas
     const validDateStart = InputDateTimeToDate(formData.startsAt)
     if (!validDateStart) {
-      alert('Por favor, insira uma data e horário de início válidos.')
-      return
+      alert('Por favor, insira uma data de início válida (formato YYYY-MM-DD).')
+      return false
     }
     const validDateEnd = InputDateTimeToDate(formData.endsAt)
     if (!validDateEnd) {
-      alert('Por favor, insira uma data e horário de término válidos.')
-      return
+      alert('Por favor, insira uma data de finalização válida (formato YYYY-MM-DD).')
+      return false
     }
 
-    if (validDateEnd <= validDateStart) {
-      alert('O término deve ser posterior ao início.')
-      return
+    if (validDateEnd < validDateStart) {
+      alert('A data de término deve ser posterior à data de início.')
+      return false
     }
 
     // 2. Determinar status
@@ -447,20 +463,11 @@ export function EleicaoProvider({
       numero: candidate.numero,
     }))
 
-    // Extrai federações ou partidos como agremiações únicas
-    const agremiacoesSet = new Set<string>()
-    const votosLegendaInicial: Record<string, number> = {}
-
-    sanitizedCandidates.forEach((candidate) => {
-      // Se tiver federação, a lei considera a federação como uma única agremiação
-      const agremiacao = candidate.federacao?.trim() || candidate.partido.trim()
-      if (agremiacao) {
-        agremiacoesSet.add(agremiacao)
-        votosLegendaInicial[agremiacao] = 0 // Inicializa a contagem de votos de legenda da agremiação zerada
-      }
-    })
-
-    const agremiacoes = Array.from(agremiacoesSet)
+    // verificar se todos os números de candidatos são únicos
+    if (sanitizedCandidates && !numberIsUnique(sanitizedCandidates)) {
+      alert('Número dos Candidatos devem ser únicos')
+      return false
+    }
 
     // 4. Montar o payload final para o domínio
     const submitData: EleicaoDeputado = {
@@ -474,9 +481,9 @@ export function EleicaoProvider({
       updatedAt: new Date(),
       type: 'deputy',
       uf: formData.state as UF,
-      agremiacoes, // Lista de partidos/federações extraída automaticamente
+      agremiacoes: [], // Lista de partidos/federações extraída no repositório
       candidatos: sanitizedCandidates,
-      votosLegenda: votosLegendaInicial, // Mapa de votos de legenda zerado
+      votosLegenda: {}, // Mapa de votos de legenda extraída no repositório
       votosBrancos: 0,
       votosNulos: 0,
     }
@@ -491,11 +498,12 @@ export function EleicaoProvider({
         cleanForms()
       }
       router.refresh()
-      alert('Eleição para deputado salva com sucesso!')
+      return true
     }
     catch (error) {
       console.error('Erro ao salvar eleição para deputado:', error)
-      alert(error instanceof Error ? error.message : 'Ocorreu um erro ao salvar os dados da eleição de deputado. Tente novamente.')
+      alert('Ocorreu um erro ao salvar os dados da eleição de deputado. Tente novamente.')
+      return false
     }
   }
 
@@ -503,21 +511,41 @@ export function EleicaoProvider({
     e.preventDefault()
 
     switch (electionType) {
-      case 'public-consultation':
-        await handleSubmitPublicConsultation()
+      case 'public-consultation': {
+        const isOk = await handleSubmitPublicConsultation()
+        if (!isOk) return
+
+        console.log('Dados Enviados:', { electionType, ...formData })
+        alert('Formulário enviado com sucesso!')
         break
+      }
+
+      case 'president': {
+        const isOk = await handleSubmitPresident()
+        if (!isOk) return
 
       case 'president':
         await handleSubmitPresident()
+        console.log('Dados Enviados:', { electionType, ...formData })
+        alert('Formulário enviado com sucesso!')
         break
+      }
+
+      case 'deputy': {
+        const isOk = await handleSubmitDeputy()
+        if (!isOk) return
 
       case 'deputy':
         await handleSubmitDeputy()
+        console.log('Dados Enviados:', { electionType, ...formData })
+        alert('Formulário enviado com sucesso!')
         break
+      }
 
-      default:
+      default: {
         console.error('Tipo de eleição não suportado')
         break
+      }
     }
   }
 

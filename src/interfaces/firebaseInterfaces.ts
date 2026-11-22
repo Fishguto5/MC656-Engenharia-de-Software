@@ -39,8 +39,6 @@ export type VotosCandidatoDocument = {
 export interface EleicaoDeputadoDocument extends BaseElectionDocument {
   type: 'deputy'
   uf: UF
-  agremiacoes: string[] // Lista de partidos/federações válidos
-  votosLegenda: Record<string, number> // {"NomeAgremiacao": quantidadeVotos}
   votosBrancos: number
   votosNulos: number
 }
