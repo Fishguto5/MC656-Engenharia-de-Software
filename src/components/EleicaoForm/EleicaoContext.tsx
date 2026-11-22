@@ -524,8 +524,6 @@ export function EleicaoProvider({
         const isOk = await handleSubmitPresident()
         if (!isOk) return
 
-      case 'president':
-        await handleSubmitPresident()
         console.log('Dados Enviados:', { electionType, ...formData })
         alert('Formulário enviado com sucesso!')
         break
@@ -535,8 +533,6 @@ export function EleicaoProvider({
         const isOk = await handleSubmitDeputy()
         if (!isOk) return
 
-      case 'deputy':
-        await handleSubmitDeputy()
         console.log('Dados Enviados:', { electionType, ...formData })
         alert('Formulário enviado com sucesso!')
         break
