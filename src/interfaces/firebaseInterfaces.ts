@@ -85,6 +85,7 @@ export type LocalConsulta = 'Brasil' | UF // Por enquanto, apenas consultas naci
 export interface ConsultaPublicaDocument extends BaseElectionDocument {
   type: 'public-consultation'
   local: LocalConsulta
+  partialResultsAllowed?: boolean
   sim: number
   nao: number
 }

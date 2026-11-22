@@ -118,7 +118,12 @@ export default function VotacaoPage() {
     <main className="signup-candidate-page">
       {message !== 'Votação não encontrada.' && <p role="alert">{message}</p>}
       {electionData.type === 'public-consultation' && (
-        <ConsultaPublicaVotarForm election={electionData} onSubmit={handleVoteSubmit} />
+        <>
+          <ConsultaPublicaVotarForm election={electionData} onSubmit={handleVoteSubmit} />
+          {electionData.partialResultsAllowed === true && (
+            <p><Link href={`/eleicoes/${encodeURIComponent(id)}/parcial`}>Acompanhar resultado parcial</Link></p>
+          )}
+        </>
       )}
 
       {electionData.type === 'president' && (

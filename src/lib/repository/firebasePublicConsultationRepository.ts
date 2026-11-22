@@ -59,6 +59,7 @@ export class FirebasePublicConsultationRepository {
       ...(hasValue(data.status) && { status: data.status as ElectionStatus }),
       ...(hasValue(data.type) && { type: data.type }),
       ...(hasValue(data.local) && { local: data.local as LocalConsulta }),
+      partialResultsAllowed: data.partialResultsAllowed === true,
       ...(hasValue(data.sim) && { sim: data.sim }),
       ...(hasValue(data.nao) && { nao: data.nao }),
       ...(hasValue(data.startsAt) && { startsAt: RawDocumentTimeToDate(data.startsAt) }),
@@ -104,8 +105,11 @@ export class FirebasePublicConsultationRepository {
       return
     }
 
-    const data: Omit<ConsultaPublicaDocument, 'id'> = {
-      ...omitId<ConsultaPublicaDocument>(dbData),
+    const fields = omitId<ConsultaPublicaDocument>(dbData)
+    delete (fields as Partial<ConsultaPublicaDocument>).sim
+    delete (fields as Partial<ConsultaPublicaDocument>).nao
+    const data = {
+      ...fields,
       updatedAt: serverTimestamp() as unknown as Timestamp,
     }
 
@@ -148,6 +152,7 @@ export class FirebasePublicConsultationRepository {
       type: 'public-consultation',
       publishedAllow: false,
       local: domain.local ?? null,
+      partialResultsAllowed: domain.partialResultsAllowed === true,
       sim: domain.sim ?? 0,
       nao: domain.nao ?? 0,
       updatedAt: serverTimestamp(),

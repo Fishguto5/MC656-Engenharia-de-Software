@@ -15,6 +15,7 @@ export interface FormElectionData {
   state: string
   candidates: VotosCandidato[]
   scope: 'national' | 'state'
+  partialResultsAllowed: boolean
 }
 
 interface EleicaoContextData {
@@ -52,6 +53,7 @@ export function EleicaoProvider({
     state: 'AC' as UF,
     candidates: [],
     scope: 'national',
+    partialResultsAllowed: false,
   })
   const [electionFound, setElectionFound] = useState<boolean>(false)
 
@@ -85,6 +87,7 @@ export function EleicaoProvider({
             candidates: ('candidatos' in eleicao && eleicao.candidatos) ? eleicao.candidatos : [],
             scope: ('local' in eleicao && eleicao.local && eleicao.local !== 'Brasil') ? 'state' : 'national',
             state: state,
+            partialResultsAllowed: 'partialResultsAllowed' in eleicao && eleicao.partialResultsAllowed === true,
           }))
 
           setElectionType(tipoEleicao)
@@ -112,6 +115,7 @@ export function EleicaoProvider({
       state: 'AC',
       candidates: [],
       scope: 'national',
+      partialResultsAllowed: false,
     })
   }
 
@@ -138,6 +142,7 @@ export function EleicaoProvider({
       endsAt: endsAtDate,
       type: 'public-consultation',
       local: local,
+      partialResultsAllowed: formData.partialResultsAllowed,
     }
     const id = (isEditing && electionId) ? electionId : null
 
@@ -273,6 +278,11 @@ export function EleicaoProvider({
   // --- HANDLERS DOS FIELDS ----
   function handleFieldChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target
+    if (name === 'partialResultsAllowed' && e.target instanceof HTMLInputElement) {
+      const checked = e.target.checked
+      setFormData(prev => ({ ...prev, partialResultsAllowed: checked }))
+      return
+    }
     const [prefix, id] = name.split('-')
 
     if (prefix === 'numero') {
@@ -335,6 +345,7 @@ export function EleicaoProvider({
       createdAt: today,
       updatedAt: today,
       local: local,
+      partialResultsAllowed: formData.partialResultsAllowed,
       nao: 0,
       sim: 0,
 

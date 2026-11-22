@@ -16,6 +16,7 @@ const PublicConsultationRawSchema = z.object({
   updatedAt: z.union([z.instanceof(Timestamp), z.string()]),
   type: z.string(),
   local: z.string(),
+  partialResultsAllowed: z.boolean().optional(),
   sim: z.number(),
   nao: z.number(),
 })
@@ -42,6 +43,7 @@ class PublicConsultationAdapter implements DatabaseAdapter<ConsultaPublicaDocume
       updatedAt,
       type: 'public-consultation',
       local: parsed.local as LocalConsulta, // Cast para o tipo esperado de LocalConsulta
+      partialResultsAllowed: parsed.partialResultsAllowed === true,
       sim: parsed.sim,
       nao: parsed.nao,
     }
@@ -59,6 +61,7 @@ class PublicConsultationAdapter implements DatabaseAdapter<ConsultaPublicaDocume
       updatedAt: Timestamp.fromDate(domain.updatedAt),
       type: domain.type,
       local: domain.local,
+      partialResultsAllowed: domain.partialResultsAllowed === true,
       sim: domain.sim,
       nao: domain.nao,
     }

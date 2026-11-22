@@ -23,6 +23,7 @@ type ListedElection = {
   status: Exclude<ElectionStatus, 'draft'>
   startsAt: Date | null
   endsAt: Date | null
+  partialResultsAllowed: boolean
 }
 
 const statusLabels: Record<ListedElection['status'], string> = {
@@ -74,6 +75,7 @@ function toListedElection(id: string, data: DocumentData): ListedElection | null
     status,
     startsAt: readDate(data.startsAt),
     endsAt: readDate(data.endsAt),
+    partialResultsAllowed: data.type === 'public-consultation' && data.partialResultsAllowed === true,
   }
 }
 
@@ -172,6 +174,7 @@ export default function ElectionsClientView() {
             {sortedElections.map((election) => {
               const canVote = voter !== null && election.status === 'open'
               const canViewResult = election.status === 'closed' && resultAvailability[election.id] === 'published'
+              const canViewPartial = canVote && election.type === 'public-consultation' && election.partialResultsAllowed
               const startsAt = formatDate(election.startsAt)
               const endsAt = formatDate(election.endsAt)
 
@@ -211,11 +214,20 @@ export default function ElectionsClientView() {
                 </>
               )
 
-              return canVote
-                ? <Link key={election.id} href={`/votar/${election.id}`} className={`${styles.card} ${styles.highlight}`} aria-label={`Votar em ${election.title}`}>{content}</Link>
-                : canViewResult
-                  ? <Link key={election.id} href={`/eleicoes/${encodeURIComponent(election.id)}/resultado`} className={styles.card} aria-label={`Ver resultado de ${election.title}`}>{content}</Link>
-                  : <article key={election.id} className={styles.card}>{content}</article>
+              return canViewPartial
+                ? (
+                    <div key={election.id} className={styles.cardGroup}>
+                      <Link href={`/votar/${encodeURIComponent(election.id)}`} className={`${styles.card} ${styles.highlight}`} aria-label={`Votar em ${election.title}`}>{content}</Link>
+                      <Link href={`/eleicoes/${encodeURIComponent(election.id)}/parcial`} className={styles.partialLink}>
+                        Acompanhar resultado parcial →
+                      </Link>
+                    </div>
+                  )
+                : canVote
+                  ? <Link key={election.id} href={`/votar/${election.id}`} className={`${styles.card} ${styles.highlight}`} aria-label={`Votar em ${election.title}`}>{content}</Link>
+                  : canViewResult
+                    ? <Link key={election.id} href={`/eleicoes/${encodeURIComponent(election.id)}/resultado`} className={styles.card} aria-label={`Ver resultado de ${election.title}`}>{content}</Link>
+                    : <article key={election.id} className={styles.card}>{content}</article>
             })}
           </section>
         )}

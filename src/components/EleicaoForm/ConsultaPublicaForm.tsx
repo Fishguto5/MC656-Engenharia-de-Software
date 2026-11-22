@@ -39,6 +39,19 @@ export default function ConsultaPublicaForm() {
           </select>
         </div>
       )}
+      <div className={`form-field ${styles.formField}`}>
+        <label htmlFor="partialResultsAllowed">
+          <input
+            type="checkbox"
+            id="partialResultsAllowed"
+            name="partialResultsAllowed"
+            checked={formData.partialResultsAllowed}
+            onChange={handleFieldChange}
+          />
+          {' '}
+          Autorizar divulgação dos resultados parciais durante a votação
+        </label>
+      </div>
     </div>
   )
 }
