@@ -1,6 +1,9 @@
+'use client'
+
 import { EleicaoDeputado } from '@/interfaces/eleicaoInterfaces'
 import { ChangeEvent, useState } from 'react'
 import styles from './votarForm.module.css'
+import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog'
 
 interface Props {
   election: EleicaoDeputado
@@ -9,7 +12,10 @@ interface Props {
 
 export function DeputadoVotarForm({ election, onSubmit }: Props) {
   const [number, setNumber] = useState<number>(0)
-  const candidato = election.candidatos.filter(cand => cand.numero === number)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const candidato = election.candidatos.find(cand => cand.numero === number)
 
   function formatDate(date: Date): string {
     const day = String(date.getDate()).padStart(2, '0')
@@ -19,10 +25,38 @@ export function DeputadoVotarForm({ election, onSubmit }: Props) {
     return `${day}/${month}/${year}`
   }
 
-  const handleSubmit = (e: React.SubmitEvent) => {
+  const getVoteDescription = () => {
+    if (candidato) {
+      const sigla = candidato.federacao || candidato.partido
+      return `Você selecionou o candidato ${candidato.nome} (${number} - ${sigla}) para "${election.title}". Deseja confirmar seu voto? Esta ação não poderá ser desfeita.`
+    }
+    if (number === 0) {
+      return `Você selecionou "Voto em Branco" para "${election.title}". Deseja confirmar seu voto? Esta ação não poderá ser desfeita.`
+    }
+    return `O número ${number} não corresponde a nenhum candidato e será registrado como "Voto Nulo" para "${election.title}". Deseja confirmar seu voto? Esta ação não poderá ser desfeita.`
+  }
+
+  const handleFormSubmit = (e: React.SubmitEvent) => {
     e.preventDefault()
-    console.log(number)
-    onSubmit({ type: 'deputy', candidateNumber: number })
+    setIsConfirmOpen(true)
+  }
+
+  const handleConfirmVote = async () => {
+    if (isSubmitting) return
+
+    try {
+      setIsSubmitting(true)
+      await onSubmit({ type: 'deputy', candidateNumber: number })
+      setIsConfirmOpen(false)
+    }
+    finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleReset = () => {
+    setNumber(0)
+    setIsConfirmOpen(false)
   }
 
   const handleFieldChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -42,68 +76,86 @@ export function DeputadoVotarForm({ election, onSubmit }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="votar-form">
-      <div className="VotarForm-title-container">
-        <h1 className="no-margin">{election.title}</h1>
-        <div className="w-full flex flex-row justify-between items-center">
-          <p className="local">
-            📌
-            {election.uf}
-          </p>
+    <>
+      <form onSubmit={handleFormSubmit} onReset={handleReset} className="votar-form">
+        <div className="VotarForm-title-container">
+          <h1 className="no-margin">{election.title}</h1>
+          <div className="w-full flex flex-row justify-between items-center">
+            <p className="local">
+              📌
+              {election.uf}
+            </p>
+            <p>
+              disponível até:
+              {formatDate(election.endsAt)}
+            </p>
+          </div>
+
           <p>
-            disponível até:
-            {formatDate(election.endsAt)}
+            <span className="font-bold">Dispõe sobre</span>
+            {' '}
+            {election.description}
           </p>
         </div>
 
-        <p>
-          <span className="font-bold">Dispõe sobre</span>
-          {' '}
-          {election.description}
-        </p>
-      </div>
+        <fieldset className={`form-field ${styles.formField}`}>
+          <label htmlFor="deputy">Número do Candidato</label>
+          <input
+            type="number"
+            name="deputy"
+            id="deputy"
+            value={number}
+            onChange={handleFieldChange}
+            min={0}
+            disabled={isSubmitting}
+          />
+        </fieldset>
 
-      <fieldset className={`form-field ${styles.formField}`}>
-        <label htmlFor="president">Número do Candidato</label>
-        <input
-          type="number"
-          name="president"
-          id="president"
-          value={number ?? 0}
-          onChange={handleFieldChange}
-          min={0}
-        />
-      </fieldset>
-
-      <div className="flex w-full justify-center">
-        {candidato.length > 0
-          ? (
-              <div className={styles.card}>
-                <h2 className={styles.nome}>{candidato[0].nome}</h2>
-                <p className={styles.badge}>
-                  {candidato[0].federacao || candidato[0].partido}
-                </p>
-              </div>
-            )
-          : number === 0
+        <div className="flex w-full justify-center">
+          {candidato
             ? (
                 <div className={styles.card}>
-                  <h2 className={styles.nome}>Voto em Branco</h2>
+                  <h2 className={styles.nome}>{candidato.nome}</h2>
+                  <p className={styles.badge}>
+                    {candidato.federacao || candidato.partido}
+                  </p>
                 </div>
               )
-            : number
+            : number === 0
               ? (
+                  <div className={styles.card}>
+                    <h2 className={styles.nome}>Voto em Branco</h2>
+                  </div>
+                )
+              : (
                   <div className={styles.card}>
                     <h2 className={styles.nome}>Voto Nulo</h2>
                   </div>
-                )
-              : null}
-      </div>
+                )}
+        </div>
 
-      <div className="VotarForm-btn-container">
-        <button type="reset" className="primary-btn cancel-btn">Cancelar</button>
-        <button type="submit" className="primary-btn confirm-btn">Confirmar</button>
-      </div>
-    </form>
+        <div className="VotarForm-btn-container">
+          <button type="reset" className="primary-btn cancel-btn" disabled={isSubmitting}>
+            Cancelar
+          </button>
+          <button type="submit" className="primary-btn confirm-btn" disabled={isSubmitting}>
+            Confirmar
+          </button>
+        </div>
+      </form>
+
+      <ConfirmDialog
+        open={isConfirmOpen}
+        title="Confirmar voto"
+        description={getVoteDescription()}
+        confirmLabel="Confirmar voto"
+        cancelLabel="Voltar"
+        isSubmitting={isSubmitting}
+        onConfirm={handleConfirmVote}
+        onCancel={() => {
+          if (!isSubmitting) setIsConfirmOpen(false)
+        }}
+      />
+    </>
   )
 }
