@@ -245,7 +245,7 @@ select:focus {
   outline-offset: 2px;
 }
 
-.primary-btn.disabled {
+.primary-btn:disabled {
   background-color: #504f4f !important;
   cursor: not-allowed !important;
   opacity: 0.8;
@@ -253,11 +253,11 @@ select:focus {
 }
 
 .primary-btn.confirm-btn {
-  background: green;
+  background: #15803d;
 }
 
 .primary-btn.cancel-btn {
-  background: red;
+  background: #b91c1c;
 }
 
 .admin-login-link {
