@@ -14,6 +14,7 @@ export interface BaseElectionDocument {
   createdAt: Timestamp
   updatedAt: Timestamp
   type: ElectionType
+  publishedAllow?: boolean
 }
 
 // 1. Coleção 'candidatos'
@@ -64,6 +65,8 @@ export interface ResultadoDeputadoConsolidadoDocument {
 export interface EleicaoPresidenteDocument extends BaseElectionDocument {
   type: 'president'
   turno: number
+  originalElectionId?: string
+  secondRoundElectionId?: string
   votosBrancos: number
   votosNulos: number
 }
@@ -82,6 +85,7 @@ export type LocalConsulta = 'Brasil' | UF // Por enquanto, apenas consultas naci
 export interface ConsultaPublicaDocument extends BaseElectionDocument {
   type: 'public-consultation'
   local: LocalConsulta
+  partialResultsAllowed?: boolean
   sim: number
   nao: number
 }

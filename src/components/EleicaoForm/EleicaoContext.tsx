@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { ElectionStatus, LocalConsulta } from '@/interfaces/firebaseInterfaces'
 import { Candidato, ConsultaPublica, EleicaoDeputado, EleicaoPresidente, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
-import { InputDateToDate, RawDocumentTimeToDate } from '@/lib/utils/date'
+import { DateToInputDateTime, InputDateTimeToDate, RawDocumentTimeToDate } from '@/lib/utils/date'
 import { useRouter } from 'next/navigation'
 import { firebaseElection } from '@/lib/repository/firebaseElectionFacade'
 import { ElectionType, UF } from '@/lib/constants/election'
@@ -15,6 +15,7 @@ export interface FormElectionData {
   state: string
   candidates: VotosCandidato[]
   scope: 'national' | 'state'
+  partialResultsAllowed: boolean
 }
 
 interface EleicaoContextData {
@@ -52,6 +53,7 @@ export function EleicaoProvider({
     state: 'AC' as UF,
     candidates: [],
     scope: 'national',
+    partialResultsAllowed: false,
   })
   const [electionFound, setElectionFound] = useState<boolean>(false)
 
@@ -80,11 +82,12 @@ export function EleicaoProvider({
             ...prev,
             title: eleicao.title ?? '',
             description: eleicao.description ?? '',
-            startsAt: eleicao.startsAt ? eleicao.startsAt.toISOString().split('T')[0] : '',
-            endsAt: eleicao.endsAt ? eleicao.endsAt.toISOString().split('T')[0] : '',
+            startsAt: eleicao.startsAt ? DateToInputDateTime(eleicao.startsAt) : '',
+            endsAt: eleicao.endsAt ? DateToInputDateTime(eleicao.endsAt) : '',
             candidates: ('candidatos' in eleicao && eleicao.candidatos) ? eleicao.candidatos : [],
             scope: ('local' in eleicao && eleicao.local && eleicao.local !== 'Brasil') ? 'state' : 'national',
             state: state,
+            partialResultsAllowed: 'partialResultsAllowed' in eleicao && eleicao.partialResultsAllowed === true,
           }))
 
           setElectionType(tipoEleicao)
@@ -112,14 +115,15 @@ export function EleicaoProvider({
       state: 'AC',
       candidates: [],
       scope: 'national',
+      partialResultsAllowed: false,
     })
   }
 
   // --- HANDLERS DO SAVE ----
   async function handleSaveDraftPublicConsultation() {
     // 1. Converter strings de data para Date (se preenchidas)
-    const startsAtDate = formData.startsAt ? InputDateToDate(formData.startsAt) ?? undefined : undefined
-    const endsAtDate = formData.endsAt ? InputDateToDate(formData.endsAt) ?? undefined : undefined
+    const startsAtDate = formData.startsAt ? InputDateTimeToDate(formData.startsAt) ?? undefined : undefined
+    const endsAtDate = formData.endsAt ? InputDateTimeToDate(formData.endsAt) ?? undefined : undefined
 
     // 2. Mapear escopo local
     let local: LocalConsulta | undefined
@@ -138,6 +142,7 @@ export function EleicaoProvider({
       endsAt: endsAtDate,
       type: 'public-consultation',
       local: local,
+      partialResultsAllowed: formData.partialResultsAllowed,
     }
     const id = (isEditing && electionId) ? electionId : null
 
@@ -161,8 +166,8 @@ export function EleicaoProvider({
 
   async function handleSaveDraftPresident() {
     // 1. Converter strings de data para Date (se preenchidas)
-    const startsAtDate = formData.startsAt ? InputDateToDate(formData.startsAt) ?? undefined : undefined
-    const endsAtDate = formData.endsAt ? InputDateToDate(formData.endsAt) ?? undefined : undefined
+    const startsAtDate = formData.startsAt ? InputDateTimeToDate(formData.startsAt) ?? undefined : undefined
+    const endsAtDate = formData.endsAt ? InputDateTimeToDate(formData.endsAt) ?? undefined : undefined
 
     // 2. Sanitizar candidatos se houver algum na lista
     const sanitizedCandidates: VotosCandidato[] | undefined = formData.candidates?.map(candidate => ({
@@ -206,8 +211,8 @@ export function EleicaoProvider({
 
   async function handleSaveDraftDeputy() {
     // 1. Converter strings de data para Date (se preenchidas)
-    const startsAtDate = formData.startsAt ? InputDateToDate(formData.startsAt) ?? undefined : undefined
-    const endsAtDate = formData.endsAt ? InputDateToDate(formData.endsAt) ?? undefined : undefined
+    const startsAtDate = formData.startsAt ? InputDateTimeToDate(formData.startsAt) ?? undefined : undefined
+    const endsAtDate = formData.endsAt ? InputDateTimeToDate(formData.endsAt) ?? undefined : undefined
 
     // 2. Sanitizar candidatos se houver algum na lista
     const sanitizedCandidates: VotosCandidato[] | undefined = formData.candidates?.map(candidate => ({
@@ -273,6 +278,11 @@ export function EleicaoProvider({
   // --- HANDLERS DOS FIELDS ----
   function handleFieldChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target
+    if (name === 'partialResultsAllowed' && e.target instanceof HTMLInputElement) {
+      const checked = e.target.checked
+      setFormData(prev => ({ ...prev, partialResultsAllowed: checked }))
+      return
+    }
     const [prefix, id] = name.split('-')
 
     if (prefix === 'numero') {
@@ -303,26 +313,25 @@ export function EleicaoProvider({
   // --- HANDLERS DO SUBMIT ----
   async function handleSubmitPublicConsultation(): Promise<boolean> {
     // Validar datas
-    const validDateStart = InputDateToDate(formData.startsAt)
+    const validDateStart = InputDateTimeToDate(formData.startsAt)
     if (!validDateStart) {
       alert('Por favor, insira uma data de início (formato YYYY-MM-DD).')
       return false
     }
-    const validDateEnd = InputDateToDate(formData.endsAt)
+    const validDateEnd = InputDateTimeToDate(formData.endsAt)
     if (!validDateEnd) {
       alert('Por favor, insira uma data de finalização (formato YYYY-MM-DD).')
       return false
     }
 
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
 
     let local: LocalConsulta = 'Brasil'
     if (formData.scope == 'state') {
       local = formData.state as UF
     }
 
-    const status = today < validDateStart ? 'scheduled' as ElectionStatus : 'open' as ElectionStatus
+    const status: ElectionStatus = today < validDateStart ? 'scheduled' : today >= validDateEnd ? 'closed' : 'open'
 
     // Enviar para o DB
     const submitData = {
@@ -336,6 +345,7 @@ export function EleicaoProvider({
       createdAt: today,
       updatedAt: today,
       local: local,
+      partialResultsAllowed: formData.partialResultsAllowed,
       nao: 0,
       sim: 0,
 
@@ -363,12 +373,12 @@ export function EleicaoProvider({
 
   async function handleSubmitPresident(): Promise<boolean> {
     // 1. Validação de datas
-    const validDateStart = InputDateToDate(formData.startsAt)
+    const validDateStart = InputDateTimeToDate(formData.startsAt)
     if (!validDateStart) {
       alert('Por favor, insira uma data de início válida (formato YYYY-MM-DD).')
       return false
     }
-    const validDateEnd = InputDateToDate(formData.endsAt)
+    const validDateEnd = InputDateTimeToDate(formData.endsAt)
     if (!validDateEnd) {
       alert('Por favor, insira uma data de finalização válida (formato YYYY-MM-DD).')
       return false
@@ -381,8 +391,7 @@ export function EleicaoProvider({
 
     // 2. Determinar status
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const status: ElectionStatus = today < validDateStart ? 'scheduled' : 'open'
+    const status: ElectionStatus = today < validDateStart ? 'scheduled' : today >= validDateEnd ? 'closed' : 'open'
 
     // 3. Sanitizar candidatos e extrair Agremiações
     const sanitizedCandidates: VotosCandidato[] = (formData.candidates || []).map(candidate => ({
@@ -437,12 +446,12 @@ export function EleicaoProvider({
 
   async function handleSubmitDeputy(): Promise<boolean> {
     // 1. Validação de datas
-    const validDateStart = InputDateToDate(formData.startsAt)
+    const validDateStart = InputDateTimeToDate(formData.startsAt)
     if (!validDateStart) {
       alert('Por favor, insira uma data de início válida (formato YYYY-MM-DD).')
       return false
     }
-    const validDateEnd = InputDateToDate(formData.endsAt)
+    const validDateEnd = InputDateTimeToDate(formData.endsAt)
     if (!validDateEnd) {
       alert('Por favor, insira uma data de finalização válida (formato YYYY-MM-DD).')
       return false
@@ -455,8 +464,7 @@ export function EleicaoProvider({
 
     // 2. Determinar status
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const status: ElectionStatus = today < validDateStart ? 'scheduled' : 'open'
+    const status: ElectionStatus = today < validDateStart ? 'scheduled' : today >= validDateEnd ? 'closed' : 'open'
 
     // 3. Sanitizar candidatos e extrair Agremiações
     const sanitizedCandidates: VotosCandidato[] = (formData.candidates || []).map(candidate => ({

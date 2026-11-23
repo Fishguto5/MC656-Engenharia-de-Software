@@ -10,9 +10,16 @@ describe('isValidTimeFrame', () => {
     expect(isValidTimeFrame(start, end)).toBe(true)
   })
 
-  it('retorna true no limite exato do mesmo dia', () => {
+  it('retorna false quando início e término têm o mesmo horário', () => {
     const start = Timestamp.fromDate(new Date(2026, 9, 4, 0, 0, 0, 0))
     const end = Timestamp.fromDate(new Date(2026, 9, 4, 0, 0, 0, 0))
+
+    expect(isValidTimeFrame(start, end)).toBe(false)
+  })
+
+  it('permite início e término no mesmo dia com horário posterior', () => {
+    const start = Timestamp.fromDate(new Date(2026, 9, 4, 10, 0))
+    const end = Timestamp.fromDate(new Date(2026, 9, 4, 12, 0))
 
     expect(isValidTimeFrame(start, end)).toBe(true)
   })

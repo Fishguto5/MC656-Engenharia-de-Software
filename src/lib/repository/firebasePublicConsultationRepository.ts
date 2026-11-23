@@ -8,6 +8,7 @@ import { isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { validateDraft } from '@/schemas/electionDraftSchema'
 import { ELECTION_COLLECTION } from '../constants/firebase'
 import { VotePayload } from './firebaseElectionFacade'
+import { isVotingOpen } from '@/lib/election-timing'
 
 type PublicConsultationPayload = Extract<VotePayload, { type: 'public-consultation' }>
 
@@ -58,6 +59,7 @@ export class FirebasePublicConsultationRepository {
       ...(hasValue(data.status) && { status: data.status as ElectionStatus }),
       ...(hasValue(data.type) && { type: data.type }),
       ...(hasValue(data.local) && { local: data.local as LocalConsulta }),
+      partialResultsAllowed: data.partialResultsAllowed === true,
       ...(hasValue(data.sim) && { sim: data.sim }),
       ...(hasValue(data.nao) && { nao: data.nao }),
       ...(hasValue(data.startsAt) && { startsAt: RawDocumentTimeToDate(data.startsAt) }),
@@ -69,23 +71,25 @@ export class FirebasePublicConsultationRepository {
     return draft
   }
 
-  async create(domain: ConsultaPublica): Promise<void> {
+  async create(domain: ConsultaPublica): Promise<string> {
     const dbData = publicConsultationAdapter.toDB(domain)
 
     // Verificar data de inicio e fim
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
-      return
+      throw new Error('A data final deve ser posterior à data inicial.')
     }
 
     // Criar data
     const data: Omit<ConsultaPublicaDocument, 'id'> = {
       ...omitId<ConsultaPublicaDocument>(dbData),
+      publishedAllow: false,
       createdAt: serverTimestamp() as unknown as Timestamp,
       updatedAt: serverTimestamp() as unknown as Timestamp,
     }
 
     try {
-      await addDoc(collection(firestore, ELECTION_COLLECTION), data)
+      const created = await addDoc(collection(firestore, ELECTION_COLLECTION), data)
+      return created.id
     }
     catch (error) {
       console.error('Erro ao criar consulta pública:', error)
@@ -101,8 +105,11 @@ export class FirebasePublicConsultationRepository {
       return
     }
 
-    const data: Omit<ConsultaPublicaDocument, 'id'> = {
-      ...omitId<ConsultaPublicaDocument>(dbData),
+    const fields = omitId<ConsultaPublicaDocument>(dbData)
+    delete (fields as Partial<ConsultaPublicaDocument>).sim
+    delete (fields as Partial<ConsultaPublicaDocument>).nao
+    const data = {
+      ...fields,
       updatedAt: serverTimestamp() as unknown as Timestamp,
     }
 
@@ -143,7 +150,9 @@ export class FirebasePublicConsultationRepository {
       endsAt: endsAtDate ? Timestamp.fromDate(endsAtDate) : null,
       status: 'draft',
       type: 'public-consultation',
+      publishedAllow: false,
       local: domain.local ?? null,
+      partialResultsAllowed: domain.partialResultsAllowed === true,
       sim: domain.sim ?? 0,
       nao: domain.nao ?? 0,
       updatedAt: serverTimestamp(),
@@ -182,6 +191,10 @@ export class FirebasePublicConsultationRepository {
           || typeof electionData?.nao !== 'number'
         ) {
           throw new Error('Documento inválido para consulta pública.')
+        }
+
+        if (!isVotingOpen(electionData.status, electionData.startsAt, electionData.endsAt)) {
+          throw new Error('A votação não está aberta.')
         }
 
         // Define dinamicamente qual campo incrementar

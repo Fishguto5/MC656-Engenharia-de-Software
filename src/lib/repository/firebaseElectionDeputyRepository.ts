@@ -10,6 +10,7 @@ import { validateDraft } from '@/schemas/electionDraftSchema'
 import { MINIMUM_DEPUTY_AGE, UF } from '../constants/election'
 import { ELECTION_COLLECTION } from '../constants/firebase'
 import { VotePayload } from './firebaseElectionFacade'
+import { isVotingOpen } from '@/lib/election-timing'
 import { numberIsUnique } from '../utils/votoCandidato'
 
 export const maxDeputyDoB = () => getDateYearsAgo(MINIMUM_DEPUTY_AGE)
@@ -122,7 +123,7 @@ export class FirebaseDeputyRepository {
     return draft
   }
 
-  async create(domain: EleicaoDeputado): Promise<void> {
+  async create(domain: EleicaoDeputado): Promise<string> {
     const dbData = deputyAdapter.toDB(domain)
 
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
@@ -135,6 +136,7 @@ export class FirebaseDeputyRepository {
 
     const data: Omit<EleicaoDeputadoDocument, 'id'> = {
       ...omitId<EleicaoDeputadoDocument>(dbData),
+      publishedAllow: false,
       createdAt: serverTimestamp() as unknown as Timestamp,
       updatedAt: serverTimestamp() as unknown as Timestamp,
     }
@@ -155,6 +157,7 @@ export class FirebaseDeputyRepository {
           domain.candidatos,
         )
       }
+      return generatedId
     }
     catch (error) {
       console.error('Erro ao criar Eleição para deputado:', error)
@@ -235,6 +238,7 @@ export class FirebaseDeputyRepository {
       endsAt: endsAtDate ? Timestamp.fromDate(endsAtDate) : null,
       status: 'draft',
       type: 'deputy',
+      publishedAllow: false,
       uf: domain.uf ?? null,
       votosBrancos: domain.votosBrancos ?? 0,
       votosNulos: domain.votosNulos ?? 0,
@@ -283,6 +287,10 @@ export class FirebaseDeputyRepository {
           || typeof electionData?.votosNulos !== 'number'
         ) {
           throw new Error('Documento inválido para eleição para deputado.')
+        }
+
+        if (!isVotingOpen(electionData.status, electionData.startsAt, electionData.endsAt)) {
+          throw new Error('A votação não está aberta.')
         }
 
         // Voto em Branco

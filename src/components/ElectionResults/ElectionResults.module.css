@@ -1,0 +1,56 @@
+.results {
+  margin-top: 24px;
+}
+
+.results > p {
+  color: #555;
+  margin: 8px 0;
+}
+
+.totals {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 28px 0;
+}
+
+.totals div {
+  border: 1px solid #ccc;
+  padding: 16px;
+}
+
+.totals dt {
+  color: #555;
+  font-size: 0.875rem;
+}
+
+.totals dd {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 8px 0 0;
+}
+
+.section {
+  margin-top: 32px;
+}
+
+.section h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.candidates {
+  border-top: 1px solid #ddd;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.candidates li {
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 12px 0;
+}

@@ -104,6 +104,14 @@ section.candidate-list h1 {
   text-align: right;
 }
 
+.signup-uf-field {
+  grid-template-columns: 1fr;
+}
+
+.signup-uf-field label {
+  text-align: left;
+}
+
 .form-field input,
 textarea,
 select {
@@ -250,6 +258,15 @@ select:focus {
 
 .primary-btn.cancel-btn {
   background: #b91c1c;
+}
+
+.admin-login-link {
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: max(20px, env(safe-area-inset-left));
+  margin: 0;
+  padding: 0 16px;
+  position: fixed;
+  width: auto;
 }
 
 /* ==========================================================================

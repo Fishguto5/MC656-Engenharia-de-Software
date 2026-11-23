@@ -83,6 +83,7 @@ export interface ResultadoPresidente {
 export interface ConsultaPublica extends BaseElection {
   type: 'public-consultation'
   local: LocalConsulta
+  partialResultsAllowed?: boolean
   sim: number
   nao: number
 }
