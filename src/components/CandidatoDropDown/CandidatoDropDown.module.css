@@ -60,12 +60,18 @@
 }
 
 .cardItem {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
   cursor: pointer;
+  border: none;
   border-bottom: 1px solid #f3f4f6;
+  background-color: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
   transition: background-color 0.15s;
 }
 
@@ -73,8 +79,14 @@
   border-bottom: none;
 }
 
-.cardItem:hover {
+.cardItem:hover,
+.cardItem:focus-visible {
   background-color: #eff6ff;
+}
+
+.cardItem:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
 }
 
 .avatar {
@@ -133,7 +145,7 @@
 
 .emptyText {
   font-size: 13px;
-  color: #9ca3af;
+  color: #6b7280;
   font-style: italic;
   margin: 0;
 }

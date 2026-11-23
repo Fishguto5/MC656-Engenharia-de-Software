@@ -120,13 +120,15 @@ export default function CandidatoClientView({ initialCandidatos }: { initialCand
         <Link href="/candidato/cadastrar" className="primary-btn ">Novo Candidato</Link>
 
         <div className="w-full">
-          <label
-            htmlFor="csvFileInput"
-            className={`primary-btn  ${isUploading ? 'disabled' : ''}`}
-            title="nome|partido|dataNascimento|federacao (opicional)"
+          <button
+            type="button"
+            onClick={() => hiddenFileInput.current?.click()}
+            disabled={isUploading}
+            className="primary-btn"
+            title="nome|partido|dataNascimento|federacao (opcional)"
           >
             Importar Candidato
-          </label>
+          </button>
           <input
             type="file"
             accept=".csv"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, KeyboardEvent } from 'react'
 import styles from './CandidatoDropDown.module.css'
 import { Candidato, VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { FormElectionData } from '../EleicaoForm/EleicaoContext'
@@ -20,6 +20,8 @@ export default function CandidatoDropDown({
 }: CandidatoDropDownProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false) // apenas controle visual de abertura
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   // lista de selecionados
   const selectedList = formData.candidates || []
@@ -49,6 +51,8 @@ export default function CandidatoDropDown({
       },
     ])
     setIsOpen(false)
+    // Devolve o foco para o botão principal após selecionar
+    requestAnimationFrame(() => triggerRef.current?.focus())
   }
 
   const handleRemove = (option: VotosCandidato) => {
@@ -60,13 +64,64 @@ export default function CandidatoDropDown({
     setIsOpen(false)
   }
 
+  // Navegação por teclado no botão principal (Trigger)
+  const handleTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'ArrowDown' && options.length > 0) {
+      e.preventDefault()
+      setIsOpen(true)
+      requestAnimationFrame(() => optionRefs.current[0]?.focus())
+    }
+    else if (e.key === 'Escape') {
+      setIsOpen(false)
+    }
+  }
+
+  // Navegação por teclado dentro da lista de opções (Setas, Home, End, Escape, Tab)
+  const handleOptionKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      const nextIndex = (index + 1) % options.length
+      optionRefs.current[nextIndex]?.focus()
+    }
+    else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (index === 0) {
+        triggerRef.current?.focus()
+      }
+      else {
+        optionRefs.current[index - 1]?.focus()
+      }
+    }
+    else if (e.key === 'Home') {
+      e.preventDefault()
+      optionRefs.current[0]?.focus()
+    }
+    else if (e.key === 'End') {
+      e.preventDefault()
+      optionRefs.current[options.length - 1]?.focus()
+    }
+    else if (e.key === 'Escape') {
+      e.preventDefault()
+      setIsOpen(false)
+      triggerRef.current?.focus()
+    }
+    else if (e.key === 'Tab' && !e.shiftKey && index === options.length - 1) {
+      // Fecha o menu naturalmente ao dar Tab para fora do último item
+      setIsOpen(false)
+    }
+  }
+
   return (
     <div className={styles.container} ref={containerRef}>
       {/* Dropdown Section */}
       <div className={styles.dropdownContainer}>
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setIsOpen(!isOpen)}
+          onKeyDown={handleTriggerKeyDown}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
           className={styles.triggerButton}
         >
           <span className={styles.placeholder}>
@@ -78,11 +133,16 @@ export default function CandidatoDropDown({
         </button>
 
         {isOpen && options.length > 0 && (
-          <div className={styles.dropdownMenu}>
-            {options.map(option => (
-              <div
+          <div className={styles.dropdownMenu} role="listbox">
+            {options.map((option, index) => (
+              <button
                 key={option.id}
+                ref={(el) => { optionRefs.current[index] = el }}
+                type="button"
+                role="option"
+                aria-selected={false}
                 onClick={() => handleSelect(option)}
+                onKeyDown={e => handleOptionKeyDown(e, index)}
                 className={styles.cardItem}
               >
                 <div className={styles.cardInfo}>
@@ -93,7 +153,7 @@ export default function CandidatoDropDown({
                     {option.federacao && ('| ' + option.federacao)}
                   </p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -102,11 +162,11 @@ export default function CandidatoDropDown({
       {/* Selected List Section */}
       <div className={styles.selectedSection}>
         <div className={styles.headerRow}>
-          <h3>
+          <h2>
             Candidatos selecionados (
             {selectedList.length}
             )
-          </h3>
+          </h2>
           {selectedList.length > 0 && (
             <button type="button" onClick={handleReset} className={styles.resetButton}>
               Limpar tudo
