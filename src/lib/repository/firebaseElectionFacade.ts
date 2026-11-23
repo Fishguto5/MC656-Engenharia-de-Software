@@ -109,11 +109,11 @@ class FirebaseElectionFacade {
     await this.recordAction(domain.id, 'edited')
   }
 
-  async registerVote(id: string, domain: VotePayload): Promise<void> {
+  async registerVote(id: string, domain: VotePayload, voter: { cpf: string, uf: string }): Promise<void> {
     const response = await fetch(`/api/elections/${encodeURIComponent(id)}/vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(domain),
+      body: JSON.stringify({ ...domain, cpf: voter.cpf, uf: voter.uf }),
     })
     if (!response.ok) {
       const result = await response.json() as { error?: string }

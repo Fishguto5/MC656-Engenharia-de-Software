@@ -6,6 +6,7 @@ import { isElectionAvailableForUf, isUf } from '@/lib/electionEligibility'
 import { ELECTION_COLLECTION } from '@/lib/constants/firebase'
 import { firestore } from '@/lib/firebase'
 import { getElectionPhase } from '@/lib/election-timing'
+import { checkVoterParticipation } from '@/lib/checkVoterParticipation'
 import { loadPublishedElectionResult } from '@/lib/publishedElectionResult'
 import { readVoterSession, type VoterSession } from '@/lib/voterSession'
 import { collection, getDocs, type DocumentData } from 'firebase/firestore'
@@ -89,6 +90,8 @@ export default function ElectionsClientView() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [resultAvailability, setResultAvailability] = useState<Record<string, 'published' | 'unpublished' | 'error'>>({})
+  const [participation, setParticipation] = useState<Record<string, 'voted' | 'available' | 'error'>>({})
+  const [retry, setRetry] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -116,8 +119,21 @@ export default function ElectionsClientView() {
               return [snapshot.id, 'error'] as const
             }
           }))
+        const participationEntries = await Promise.all(visibleSnapshots
+          .filter(item => item.election.status === 'open' && voterSession !== null)
+          .map(async ({ snapshot }) => {
+            try {
+              const voted = await checkVoterParticipation(snapshot.id, voterSession!)
+              return [snapshot.id, voted ? 'voted' : 'available'] as const
+            }
+            catch (cause) {
+              console.error('Erro ao verificar participação:', cause)
+              return [snapshot.id, 'error'] as const
+            }
+          }))
 
         if (!active) return
+        setParticipation(Object.fromEntries(participationEntries))
         setResultAvailability(Object.fromEntries(availabilityEntries))
         setElections(visibleSnapshots.map(item => item.election))
         setVoter(voterSession)
@@ -135,13 +151,13 @@ export default function ElectionsClientView() {
     return () => {
       active = false
     }
-  }, [])
+  }, [retry])
 
   const sortedElections = [...elections].sort((a, b) => {
     return statusOrder[a.status] - statusOrder[b.status]
       || (a.startsAt?.getTime() ?? 0) - (b.startsAt?.getTime() ?? 0)
   })
-  const readyToVote = voter ? sortedElections.filter(election => election.status === 'open').length : 0
+  const readyToVote = voter ? sortedElections.filter(election => election.status === 'open' && participation[election.id] === 'available').length : 0
 
   return (
     <main className="signup-candidate-page">
@@ -172,9 +188,11 @@ export default function ElectionsClientView() {
         {!loading && !error && sortedElections.length > 0 && (
           <section aria-label="Lista de eleições" className={styles.list}>
             {sortedElections.map((election) => {
-              const canVote = voter !== null && election.status === 'open'
+              const voteState = participation[election.id]
+              const canVote = voter !== null && election.status === 'open' && voteState === 'available'
               const canViewResult = election.status === 'closed' && resultAvailability[election.id] === 'published'
-              const canViewPartial = canVote && election.type === 'public-consultation' && election.partialResultsAllowed
+              const canViewPartial = voter !== null && election.status === 'open'
+                && election.type === 'public-consultation' && election.partialResultsAllowed
               const startsAt = formatDate(election.startsAt)
               const endsAt = formatDate(election.endsAt)
 
@@ -199,6 +217,12 @@ export default function ElectionsClientView() {
                         <span aria-hidden="true">→</span>
                       </span>
                     )}
+                    {election.status === 'open' && voteState === 'voted' && (
+                      <span className={styles.resultMessage}>Voto computado</span>
+                    )}
+                    {election.status === 'open' && voteState === 'error' && (
+                      <span className={styles.resultMessage}>Não foi possível verificar sua participação</span>
+                    )}
                     {canViewResult && (
                       <span className={styles.action}>
                         Ver resultado
@@ -217,7 +241,9 @@ export default function ElectionsClientView() {
               return canViewPartial
                 ? (
                     <div key={election.id} className={styles.cardGroup}>
-                      <Link href={`/votar/${encodeURIComponent(election.id)}`} className={`${styles.card} ${styles.highlight}`} aria-label={`Votar em ${election.title}`}>{content}</Link>
+                      {canVote
+                        ? <Link href={`/votar/${encodeURIComponent(election.id)}`} className={`${styles.card} ${styles.highlight}`} aria-label={`Votar em ${election.title}`}>{content}</Link>
+                        : <article className={styles.card}>{content}</article>}
                       <Link href={`/eleicoes/${encodeURIComponent(election.id)}/parcial`} className={styles.partialLink}>
                         Acompanhar resultado parcial →
                       </Link>
@@ -230,6 +256,17 @@ export default function ElectionsClientView() {
                     : <article key={election.id} className={styles.card}>{content}</article>
             })}
           </section>
+        )}
+        {!loading && !error && Object.values(participation).includes('error') && (
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true)
+              setRetry(value => value + 1)
+            }}
+          >
+            Tentar verificar participação novamente
+          </button>
         )}
       </section>
     </main>

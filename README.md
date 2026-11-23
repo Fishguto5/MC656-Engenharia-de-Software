@@ -48,9 +48,12 @@ O eleitor informa CPF, nome e UF do domicílio eleitoral, visualiza as votaçõe
    NEXT_PUBLIC_FIREBASE_APP_ID=seu_app_id
    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=seu_measurement_id
    ADMIN_SESSION_SECRET=substitua_por_um_segredo_aleatorio_com_pelo_menos_32_caracteres
+   VOTER_PARTICIPATION_SECRET=substitua_por_outro_segredo_aleatorio_com_pelo_menos_32_caracteres
    ```
 
    Gere o valor de `ADMIN_SESSION_SECRET` com `openssl rand -hex 32`. Ele assina e valida o cookie da sessão administrativa, que dura até oito horas. Sem esse segredo, o login administrativo não funciona; trocá-lo invalida as sessões existentes. O fluxo do eleitor comum não usa essa variável. Após, a criação da credencial insira a mesma dentro do `.env.local`.
+
+   Gere **outro** valor com `openssl rand -hex 32` para `VOTER_PARTICIPATION_SECRET`. O servidor usa esse segredo para derivar um identificador da participação por CPF em cada eleição, sem gravar o CPF no registro. Ele é obrigatório para consultar participações e registrar novos votos. Mantenha o mesmo valor entre implantações: trocá-lo impede reconhecer participações anteriores. O arquivo `.env.local` é ignorado pelo Git e não deve ser enviado ao repositório.
 
 3. Inicie o servidor de desenvolvimento:
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { collection, doc, getDocs, increment, limit, query, runTransaction, where } from 'firebase/firestore'
 import { isVotingOpen } from '@/lib/election-timing'
 import { firestore } from '@/lib/firebase'
+import { isElectionAvailableForUf, isUf } from '@/lib/electionEligibility'
+import { parseVoter, participationRef } from '@/lib/voterParticipation'
 
 type VoteInput
   = | { type: 'public-consultation', proposalApproved: boolean }
@@ -24,16 +26,20 @@ function parseVote(value: unknown): VoteInput | null {
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   let vote: VoteInput | null = null
+  let voter: ReturnType<typeof parseVoter> = null
   try {
-    vote = parseVote(await request.json())
+    const body = await request.json()
+    vote = parseVote(body)
+    voter = parseVoter(body)
   }
   catch {
     return NextResponse.json({ error: 'Voto inválido.' }, { status: 400 })
   }
-  if (!id || !vote) return NextResponse.json({ error: 'Voto inválido.' }, { status: 400 })
+  if (!id || id.includes('/') || !vote || !voter) return NextResponse.json({ error: 'Voto ou identificação inválidos.' }, { status: 400 })
 
   try {
     const electionRef = doc(firestore, 'eleicoes', id)
+    const participation = participationRef(id, voter.cpf)
     const candidateRef = vote.type !== 'public-consultation' && vote.candidateNumber !== 0
       ? (await getDocs(query(
           collection(firestore, 'eleicoes', id, 'candidatos'),
@@ -47,26 +53,37 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (!election.exists()) throw new Error('NOT_FOUND')
       const data = election.data()
       if (data.type !== vote.type) throw new Error('INVALID_TYPE')
+      const location = {
+        type: vote.type,
+        uf: isUf(data.uf) ? data.uf : undefined,
+        local: data.local === 'Brasil' || isUf(data.local) ? data.local : undefined,
+      }
+      if (!isElectionAvailableForUf(location, voter.uf)) throw new Error('WRONG_UF')
       if (!isVotingOpen(data.status, data.startsAt, data.endsAt, new Date())) throw new Error('CLOSED')
+      const existingParticipation = await transaction.get(participation)
+      if (existingParticipation.exists()) throw new Error('ALREADY_VOTED')
+
+      let target = electionRef
+      let update: Record<string, unknown>
 
       if (vote.type === 'public-consultation') {
-        transaction.update(electionRef, { [vote.proposalApproved ? 'sim' : 'nao']: increment(1) })
-        return
+        update = { [vote.proposalApproved ? 'sim' : 'nao']: increment(1) }
       }
-
-      if (vote.candidateNumber === 0) {
-        transaction.update(electionRef, { votosBrancos: increment(1) })
-        return
+      else if (vote.candidateNumber === 0) {
+        update = { votosBrancos: increment(1) }
       }
-
-      if (candidateRef) {
+      else if (candidateRef) {
         const candidate = await transaction.get(candidateRef)
         if (candidate.exists() && candidate.data().numero === vote.candidateNumber) {
-          transaction.update(candidateRef, { votos: increment(1) })
-          return
+          target = candidateRef
+          update = { votos: increment(1) }
         }
+        else update = { votosNulos: increment(1) }
       }
-      transaction.update(electionRef, { votosNulos: increment(1) })
+      else update = { votosNulos: increment(1) }
+
+      transaction.update(target, update)
+      transaction.set(participation, { votedAt: new Date() })
     })
     return NextResponse.json({ ok: true })
   }
@@ -79,6 +96,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     if (error instanceof Error && error.message === 'INVALID_TYPE') {
       return NextResponse.json({ error: 'Tipo de voto inválido.' }, { status: 400 })
+    }
+    if (error instanceof Error && error.message === 'WRONG_UF') {
+      return NextResponse.json({ error: 'Esta votação não está disponível para a UF informada.' }, { status: 403 })
+    }
+    if (error instanceof Error && error.message === 'ALREADY_VOTED') {
+      return NextResponse.json({ error: 'Voto já computado para este CPF.', code: 'ALREADY_VOTED' }, { status: 409 })
     }
     console.error('Erro ao registrar voto:', error)
     return NextResponse.json({ error: 'Não foi possível registrar o voto.' }, { status: 503 })
