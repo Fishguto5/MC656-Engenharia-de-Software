@@ -26,11 +26,23 @@ export default function CandidatoCard(props: CandidatoProps) {
       </div>
 
       <div className={styles.iconContainer}>
-        <Link href={`/candidato/${props.id}/editar`} className={`${styles.cardButton} ${styles.edit}`} title="Editar candidato">
-          <Image src="/icons/pencil.svg" alt="Editar candidato" fill loading="eager" />
+        <Link
+          href={`/candidato/${props.id}/editar`}
+          className={`${styles.cardButton} ${styles.edit}`}
+          title="Editar candidato"
+          aria-label="Editar candidato"
+        >
+          <Image src="/icons/pencil.svg" alt="" fill loading="eager" />
         </Link>
-        <button className={`${styles.cardButton} ${styles.trash}`} title="Remover candidato" onClick={props.deleteFunction}>
-          <Image src="/icons/trash.svg" alt="Remover candidato" fill loading="eager" />
+
+        <button
+          type="button"
+          className={`${styles.cardButton} ${styles.trash}`}
+          title="Remover candidato"
+          aria-label="Remover candidato"
+          onClick={props.deleteFunction}
+        >
+          <Image src="/icons/trash.svg" alt="" fill loading="eager" />
         </button>
       </div>
 

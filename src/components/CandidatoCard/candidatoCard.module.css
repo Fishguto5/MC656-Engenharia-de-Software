@@ -32,19 +32,37 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: solid 2px black;
+  border: solid 2px #080808;
   border-radius: 5px;
   cursor: pointer;
   box-sizing: border-box;
-  background: transparent;
+  background-color: transparent;
+  padding: 0;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
-.edit:hover {
+.cardButton:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+.cardButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edit:hover:not(:disabled),
+.edit:focus-visible:not(:disabled) {
   background-color: #d97706;
 }
 
-.trash:hover {
-  background-color: #dc2626;
+.trash:hover:not(:disabled),
+.trash:focus-visible:not(:disabled) {
+  background-color: #b91c1c;
+  outline-color: #b91c1c;
 }
 
 @media screen and (min-width: 768px) {
