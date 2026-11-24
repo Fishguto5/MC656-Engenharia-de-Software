@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isValidCpf } from '@/app/sign-up/page'
+import { isValidCpf } from '@/lib/utils/cpf'
 // nesse arquivo a gente faz a verificação de alguns tipos de cpfs que podem ser ser inseridos no momento de registrar
 describe('isValidCpf', () => {
   it('aceita CPF válido com e sem pontuação', () => {

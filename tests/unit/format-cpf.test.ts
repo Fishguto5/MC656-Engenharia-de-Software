@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCpf } from '@/app/sign-up/page'
+import { formatCpf } from '@/lib/utils/cpf'
 
 describe('formatCpf', () => {
   it('aplica a máscara ao CPF', () => {

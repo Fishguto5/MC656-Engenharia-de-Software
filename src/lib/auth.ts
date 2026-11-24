@@ -1,4 +1,5 @@
-/** Interface comum para autenticação via Firebase
+/** Autenticação de administradores via Firebase.
+ * O fluxo do eleitor comum em /sign-up não consulta esta coleção.
  *
  * Uma fachada (AuthFacade) com uma interface pequena e estável. O restante do app só conhece
  * `AuthFacade` e `User`, nunca o Firebase.

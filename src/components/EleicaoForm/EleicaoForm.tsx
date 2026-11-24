@@ -2,7 +2,6 @@ import styles from './EleicaoForm.module.css'
 import DeputadoForm from './DeputadoForm'
 import PresidenteForm from './PresidenteForm'
 import { useEleicao } from './EleicaoContext'
-import { getDateYearsAgo } from '@/lib/utils/date'
 import ConsultaPublicaForm from './ConsultaPublicaForm'
 
 export default function EleicaoForm() {
@@ -48,10 +47,9 @@ export default function EleicaoForm() {
         <div className={`form-field ${styles.formField}`}>
           <label htmlFor="startsAt">Início da votação</label>
           <input
-            type="date"
+            type="datetime-local"
             name="startsAt"
             id="startsAt"
-            min={getDateYearsAgo(0)}
             autoComplete="off"
             required
             onChange={handleFieldChange}
@@ -62,10 +60,10 @@ export default function EleicaoForm() {
         <div className={`form-field ${styles.formField}`}>
           <label htmlFor="endsAt">Fim da votação</label>
           <input
-            type="date"
+            type="datetime-local"
             name="endsAt"
             id="endsAt"
-            min={formData.startsAt === '' ? getDateYearsAgo(0) : formData.startsAt}
+            min={formData.startsAt || undefined}
             autoComplete="off"
             required
             onChange={handleFieldChange}

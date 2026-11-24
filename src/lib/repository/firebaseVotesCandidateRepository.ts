@@ -1,6 +1,6 @@
 import { VotosCandidato } from '@/interfaces/eleicaoInterfaces'
 import { firestore } from '../firebase'
-import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
+import { collection, doc, getDocs, increment, query, Transaction, where, writeBatch } from 'firebase/firestore'
 import { votesCandidateAdapter } from '../adapter/firebaseVotesCandidateAdapter'
 import { firebaseCandidate } from './firebaseCandidatesRepository'
 import { CANDIDATES_ELECTION_SUBSOLLECTION } from '../constants/firebase'
@@ -61,6 +61,35 @@ export class FirebaseVotesCandidateRepository {
     }
 
     await batch.commit()
+  }
+
+  async incrementVoteInTransaction(
+    transaction: Transaction,
+    eleicaoId: string,
+    collectionName: string,
+    numero: number,
+  ): Promise<boolean> {
+    const subColRef = collection(firestore, collectionName, eleicaoId, CANDIDATES_ELECTION_SUBSOLLECTION)
+    const q = query(subColRef, where('numero', '==', numero))
+    const snapshot = await getDocs(q)
+
+    if (snapshot.empty) {
+      return false
+    }
+
+    const candidateDoc = snapshot.docs[0]
+    const candidateRef = doc(firestore, collectionName, eleicaoId, CANDIDATES_ELECTION_SUBSOLLECTION, candidateDoc.id)
+    const candidateSnap = await transaction.get(candidateRef)
+
+    if (!candidateSnap.exists()) {
+      return false
+    }
+
+    transaction.update(candidateRef, {
+      votos: increment(1),
+    })
+
+    return true
   }
 }
 

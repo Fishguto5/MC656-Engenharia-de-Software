@@ -1,74 +1,52 @@
 'use client'
 
+import Link from 'next/link'
+import { LISTA_UFS, type UF } from '@/lib/constants/election'
+import { saveVoterSession } from '@/lib/voterSession'
+import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, '')
-}
-
-export function isValidCpf(value: string) {
-  const cpf = onlyDigits(value)
-
-  if (cpf.length !== 11 || /^([0-9])\1+$/.test(cpf)) {
-    return false
-  }
-
-  const calculateDigit = (length: number) => {
-    let sum = 0
-
-    for (let index = 0; index < length; index += 1) {
-      sum += Number(cpf[index]) * (length + 1 - index)
-    }
-
-    const remainder = (sum * 10) % 11
-    return remainder === 10 ? 0 : remainder
-  }
-
-  return (
-    calculateDigit(9) === Number(cpf[9])
-    && calculateDigit(10) === Number(cpf[10])
-  )
-}
-
-export function formatCpf(value: string) {
-  const cpf = onlyDigits(value).slice(0, 11)
-
-  return cpf
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-}
+import { formatCpf, isValidCpf, onlyDigits } from '@/lib/utils/cpf'
 
 export default function SignUpPage() {
+  const router = useRouter()
   const [cpf, setCpf] = useState('')
   const [name, setName] = useState('')
+  const [uf, setUf] = useState<UF | ''>('')
   const [message, setMessage] = useState('')
-  const [isSuccess, setIsSuccess] = useState(false)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const trimmedName = name.trim()
 
     if (!trimmedName) {
-      setIsSuccess(false)
       setMessage('Informe seu nome.')
       return
     }
 
     if (!isValidCpf(cpf)) {
-      setIsSuccess(false)
       setMessage('Informe um CPF válido.')
       return
     }
 
-    setIsSuccess(true)
-    setMessage('CPF validado com sucesso.')
+    if (!uf) {
+      setMessage('Selecione a UF do domicílio eleitoral.')
+      return
+    }
+
+    setMessage('')
+    try {
+      saveVoterSession({ cpf: onlyDigits(cpf), name: trimmedName, uf })
+      router.push('/eleicoes')
+    }
+    catch {
+      setMessage('Não foi possível acessar as eleições. Tente novamente.')
+    }
   }
 
   return (
     <main className="signup-page">
       <section className="signup-card" aria-labelledby="signup-title">
-        <h1 id="signup-title">ÁREA DO ADMINISTRADOR</h1>
+        <h1 id="signup-title">ÁREA DO ELEITOR</h1>
 
         <form className="signup-form" onSubmit={handleSubmit} noValidate>
           <div className="form-field">
@@ -81,7 +59,11 @@ export default function SignUpPage() {
               autoComplete="off"
               placeholder="000.000.000-00"
               value={cpf}
-              onChange={event => setCpf(formatCpf(event.target.value))}
+              onChange={(event) => {
+                const formattedCpf = formatCpf(event.currentTarget.value)
+                event.currentTarget.value = formattedCpf
+                setCpf(formattedCpf)
+              }}
               aria-describedby={message ? 'form-message' : undefined}
             />
           </div>
@@ -99,19 +81,38 @@ export default function SignUpPage() {
             />
           </div>
 
+          <div className="form-field signup-uf-field">
+            <label htmlFor="uf">UF do domicílio eleitoral:</label>
+            <select
+              id="uf"
+              name="uf"
+              value={uf}
+              required
+              onChange={event => setUf(event.target.value as UF | '')}
+              aria-describedby={message ? 'form-message' : undefined}
+            >
+              <option value="">Selecione a UF</option>
+              {LISTA_UFS.map(value => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </div>
+
           <button type="submit" className="primary-btn">Acessar</button>
+          <Link href="/resultados" className="primary-btn">Consultar resultados publicados</Link>
 
           {message && (
             <p
               id="form-message"
-              className={isSuccess ? 'form-message success' : 'form-message'}
-              role="status"
+              className="form-message"
+              role="alert"
             >
               {message}
             </p>
           )}
         </form>
       </section>
+      <Link href="/admin/login" className="primary-btn admin-login-link">
+        Entrar como administrador
+      </Link>
     </main>
   )
 }

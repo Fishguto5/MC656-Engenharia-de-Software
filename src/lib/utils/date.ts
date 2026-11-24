@@ -22,15 +22,29 @@ export function InputDateToDate(date: string): Date | null {
   return null
 }
 
+/* YYYY-MM-DDTHH:mm (horário local) => Date */
+export function InputDateTimeToDate(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)
+  if (!match) return null
+
+  const [, year, month, day, hour, minute] = match.map(Number)
+  const date = new Date(year, month - 1, day, hour, minute)
+  return date.getFullYear() === year
+    && date.getMonth() === month - 1
+    && date.getDate() === day
+    && date.getHours() === hour
+    && date.getMinutes() === minute
+    ? date
+    : null
+}
+
+export function DateToInputDateTime(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 export function isValidTimeFrame(start: Timestamp, end: Timestamp): boolean {
-  const dateStart = start.toDate()
-  dateStart.setHours(0, 0, 0, 0)
-
-  const dateEnd = end.toDate()
-  dateEnd.setHours(0, 0, 0, 0)
-
-  // Garante que o dia de início é anterior ou igual ao dia de término
-  return dateStart <= dateEnd
+  return start.toMillis() < end.toMillis()
 }
 
 // Aceita Timestamp, Date, string ISO, objeto com segundos (legado Firestore) ou null/undefined

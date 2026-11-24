@@ -1,5 +1,5 @@
 import { ElectionStatus, EleicaoPresidenteDocument } from '@/interfaces/firebaseInterfaces'
-import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc } from 'firebase/firestore'
+import { Timestamp, doc, getDoc, serverTimestamp, collection, setDoc, updateDoc, runTransaction, increment } from 'firebase/firestore'
 import { firestore } from '../firebase'
 import { getDateYearsAgo, isValidTimeFrame, RawDocumentTimeToDate } from '../utils/date'
 import { omitId } from '../utils/omitId'
@@ -9,10 +9,15 @@ import { firebaseVotesCandidate } from './firebaseVotesCandidateRepository'
 import { validateDraft } from '@/schemas/electionDraftSchema'
 import { MINIMUM_PRESIDENT_AGE } from '../constants/election'
 import { ELECTION_COLLECTION } from '../constants/firebase'
+import { VotePayload } from './firebaseElectionFacade'
+import { isVotingOpen } from '@/lib/election-timing'
+import { numberIsUnique } from '../utils/votoCandidato'
 
 export const maxPresidentDoB = () => {
   return getDateYearsAgo(MINIMUM_PRESIDENT_AGE)
 }
+
+type PresidentPayload = VotePayload & { type: 'president' }
 
 export class FirebasePresidentRepository {
   async findById(id: string): Promise<EleicaoPresidente | null> {
@@ -32,7 +37,10 @@ export class FirebasePresidentRepository {
       const eleicao = presidentAdapter.fromDB(rawData)
 
       // Busca os candidatos correspondentes na subcoleção usando ELECTION_COLLECTION
-      eleicao.candidatos = await firebaseVotesCandidate.findByElectionId(id, ELECTION_COLLECTION)
+      const candidatos = await firebaseVotesCandidate.findByElectionId(id, ELECTION_COLLECTION)
+      if (candidatos && candidatos.length > 0) {
+        eleicao.candidatos = candidatos
+      }
 
       return eleicao
     }
@@ -82,15 +90,20 @@ export class FirebasePresidentRepository {
     return draft
   }
 
-  async create(domain: EleicaoPresidente): Promise<void> {
+  async create(domain: EleicaoPresidente): Promise<string> {
     const dbData = presidentAdapter.toDB(domain)
 
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
-      return
+      throw new Error('A data final deve ser posterior à data inicial.')
+    }
+
+    if (!numberIsUnique(domain.candidatos)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
     }
 
     const data: Omit<EleicaoPresidenteDocument, 'id'> = {
       ...omitId<EleicaoPresidenteDocument>(dbData),
+      publishedAllow: false,
       createdAt: serverTimestamp() as unknown as Timestamp,
       updatedAt: serverTimestamp() as unknown as Timestamp,
     }
@@ -111,6 +124,7 @@ export class FirebasePresidentRepository {
           domain.candidatos,
         )
       }
+      return generatedId
     }
     catch (error) {
       console.error('Erro ao criar Eleição para presidente:', error)
@@ -123,6 +137,10 @@ export class FirebasePresidentRepository {
 
     if (!isValidTimeFrame(dbData.startsAt, dbData.endsAt)) {
       return
+    }
+
+    if (!numberIsUnique(domain.candidatos)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
     }
 
     const data: Omit<EleicaoPresidenteDocument, 'id'> = {
@@ -160,6 +178,9 @@ export class FirebasePresidentRepository {
           votos: candidate.votos ?? 0,
         }))
       : undefined
+    if (sanitizedCandidates && !numberIsUnique(sanitizedCandidates)) {
+      throw new Error('Os números dos candidatos devem sser únicos')
+    }
 
     const errorMsg = validateDraft('president', {
       startsAt: startsAtDate,
@@ -184,6 +205,7 @@ export class FirebasePresidentRepository {
       endsAt: endsAtDate ? Timestamp.fromDate(endsAtDate) : null,
       status: 'draft',
       type: 'president',
+      publishedAllow: false,
       turno: domain.turno ?? 1,
       votosBrancos: domain.votosBrancos ?? 0,
       votosNulos: domain.votosNulos ?? 0,
@@ -209,6 +231,61 @@ export class FirebasePresidentRepository {
     }
     catch (error) {
       console.error('Erro ao salvar rascunho de eleição para presidente:', error)
+      throw error
+    }
+  }
+
+  async registerVote(id: string, domain: PresidentPayload): Promise<void> {
+    const electionRef = doc(firestore, ELECTION_COLLECTION, id)
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const snapshot = await transaction.get(electionRef)
+
+        if (!snapshot.exists()) {
+          throw new Error('Documento não encontrado.')
+        }
+
+        const electionData = snapshot.data()
+
+        if (
+          electionData?.type !== 'president'
+          || typeof electionData?.votosBrancos !== 'number'
+          || typeof electionData?.votosNulos !== 'number'
+        ) {
+          throw new Error('Documento inválido para eleição presidencial.')
+        }
+
+        if (!isVotingOpen(electionData.status, electionData.startsAt, electionData.endsAt)) {
+          throw new Error('A votação não está aberta.')
+        }
+
+        // Voto em Branco
+        if (domain.candidateNumber === 0) {
+          transaction.update(electionRef, {
+            votosBrancos: increment(1),
+          })
+          return
+        }
+
+        // Procura na subcoleção via repositório de votos e incrementa se existir
+        const existCandidate = await firebaseVotesCandidate.incrementVoteInTransaction(
+          transaction,
+          id,
+          ELECTION_COLLECTION,
+          domain.candidateNumber,
+        )
+
+        // Voto Nulo (caso não exista candidato com o número informado)
+        if (!existCandidate) {
+          transaction.update(electionRef, {
+            votosNulos: increment(1),
+          })
+        }
+      })
+    }
+    catch (error) {
+      console.error('Erro ao registrar voto:', error)
       throw error
     }
   }

@@ -101,6 +101,8 @@ describe('agremiacaoDe', () => {
   it('usa a federacao quando houver e o partido caso contrario', () => {
     expect(agremiacaoDe(criarCandidato('c1', 'PT', 1, { federacao: 'Federacao Alfa' }))).toBe('Federacao Alfa')
     expect(agremiacaoDe(criarCandidato('c2', 'PL', 1))).toBe('PL')
+    expect(agremiacaoDe(criarCandidato('c3', 'PT', 0, { federacao: '' }))).toBe('PT')
+    expect(agremiacaoDe(criarCandidato('c4', 'PT', 0, { federacao: '  ' }))).toBe('PT')
   })
 })
 
